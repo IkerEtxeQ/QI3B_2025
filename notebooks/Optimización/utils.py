@@ -1,14 +1,20 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-
 import neal
-
 import numpy as np
 import time
 
 
 def definir_posiciones(dic_nodos, radio=1):
-    """Define las posiciones de los nodos en un círculo."""
+    """Define las posiciones de los nodos en un círculo equidistantes.
+
+    Args:
+        dic_nodos (dict): Diccionario de nodos.
+        radio (float): Radio del círculo.
+
+    Returns:
+        dict: Diccionario con las posiciones de los nodos.
+    """
     n = len(dic_nodos)
     posiciones = {}
     for i in range(n):
@@ -19,7 +25,14 @@ def definir_posiciones(dic_nodos, radio=1):
     return posiciones
 
 
-def crearGrafoNodeWeight(dic_nodos, dic_aristas, titulo):
+def crear_SimpleGrafo_node_weight(dic_nodos, dic_aristas, titulo):
+    """Crea y visualiza un grafo con pesos en los nodos.
+
+    Args:
+        dic_nodos (dict): Diccionario con los nodos y sus pesos.
+        dic_aristas (dict): Diccionario con las aristas del grafo.
+        titulo (str): Título del gráfico.
+    """
     # Crear el grafo
     G = nx.Graph()
 
@@ -30,11 +43,11 @@ def crearGrafoNodeWeight(dic_nodos, dic_aristas, titulo):
     for pueblo, enemigo in dic_aristas.items():
         G.add_edge(pueblo, enemigo)
 
-    # Llamar al método para definir posiciones
+    # Define las posiciones de los nodos
     posiciones = definir_posiciones(dic_nodos)
 
-    # Opciones de dibujo
-    options = {
+    # Opciones de dibujo por defecto
+    default_options = {
         "font_size": 12,
         "node_size": 1000,
         "node_color": "white",
@@ -46,7 +59,7 @@ def crearGrafoNodeWeight(dic_nodos, dic_aristas, titulo):
     }
 
     # Dibujar el grafo
-    nx.draw_networkx(G, posiciones, **options)
+    nx.draw_networkx(G, posiciones, **default_options)
 
     # Ajustes finales
     ax = plt.gca()
@@ -56,64 +69,7 @@ def crearGrafoNodeWeight(dic_nodos, dic_aristas, titulo):
     plt.show()
 
 
-def matrizHamiltoniano(bqm, eliminar_bajo_diagonal=True):
-    """Muestra la matriz QUBO y los detalles del Hamiltoniano."""
-
-    Q, lineal, interacciones, offset = crearMatrizHamiltoniano(
-        bqm, eliminar_bajo_diagonal
-    )
-
-    # Configurar la visualización de matrices sin mostrar decimales innecesarios
-    np.set_printoptions(precision=2, suppress=True)
-
-    # Mostrar la matriz QUBO
-    print("Matriz QUBO:")
-    print("-------------------------")
-    print(Q)
-    print("")
-
-    # Mostrar el Hamiltoniano del sistema
-    print("HAMILTONIANO DEL SISTEMA:")
-    print("-------------------------")
-
-    # Formatear los términos lineales para eliminar decimales innecesarios
-    print(
-        "Término lineal:",
-        {
-            var: f"{val:.2f}" if val % 1 != 0 else f"{int(val)}"
-            for var, val in sorted(lineal.items())
-        },
-    )
-
-    # Formatear los términos cuadráticos
-    print(
-        "Términos cuadráticos:",
-        {
-            (var1, var2): f"{val:.2f}" if val % 1 != 0 else f"{int(val)}"
-            for (var1, var2), val in interacciones.items()
-        },
-    )
-
-    # Formatear el offset
-    print("Offset:", f"{offset:.2f}" if offset % 1 != 0 else f"{int(offset)}")
-    print("")
-
-
-def crearMatrizHamiltoniano(bqm, eliminar_bajo_diagonal):
-    """Crea la matriz QUBO utilizando los términos lineales y cuadráticos del BQM.
-
-    Si `eliminar_bajo_diagonal` es True, se eliminan los valores debajo de la diagonal.
-    """
-    variables = sorted(bqm.variables)
-    var_index = {var: i for i, var in enumerate(variables)}
-    lineal = bqm.linear
-    sorted_lineal = {var: lineal[var] for var in variables}
-    interacciones = bqm.quadratic
-    n = len(bqm.variables)
-
-    # Crear la matriz de ceros
-    Q = np.zeros((n, n))
-
+def asignar_valores_diagonales(Q, lineal, variables):
     # Crear la lista de valores lineales en función del índice de las variables
     diagonal_values = [
         lineal[var] for var in variables
@@ -127,80 +83,136 @@ def crearMatrizHamiltoniano(bqm, eliminar_bajo_diagonal):
             "El número de valores lineales no coincide con el tamaño de la matriz Q."
         )
 
-    # Asignar términos cuadráticos en la parte superior de la matriz
+
+def asignar_terminos_cuadraticos(
+    Q, interacciones, var_index, eliminar_bajo_diagonal=True
+):
     for (var1, var2), coef in interacciones.items():
         i, j = var_index[var1], var_index[var2]
-        Q[i, j] = Q[j, i] = coef  # Solo en la parte superior
-
-    # Si eliminar_bajo_diagonal es True, ponemos los valores debajo de la diagonal en 0
-    if eliminar_bajo_diagonal:
-        for i in range(n):
-            for j in range(i + 1, n):  # Desde la primera fila debajo de la diagonal
-                Q[j, i] = 0  # Eliminar valor en la parte inferior
-
-    return Q, sorted_lineal, interacciones, bqm.offset
+        if eliminar_bajo_diagonal:
+            if i < j:
+                Q[i, j] = coef
+            else:
+                Q[j, i] = coef
+        else:
+            Q[i, j] = Q[j, i] = coef
 
 
-def ejecucionSimmulatedAnnealing(model, bqm, num_reads=10):
-    ######### Resolvemos el problema - Simulador Annealing #########
-    sampler = neal.SimulatedAnnealingSampler()  # minimiza la energia del problema que se le proporcina. Si quieres maximizar f(x), minimiza -f(x).
+def mostrar_matriz_hamiltoniano(bqm, eliminar_bajo_diagonal=True):
+    """Muestra la matriz QUBO y los detalles del Hamiltoniano.
+
+    Args:
+        bqm (dimod.BinaryQuadraticModel): Modelo BQM.
+        eliminar_bajo_diagonal (bool): Indica si se eliminan los valores debajo de la diagonal.
+    """
+    variables = sorted(bqm.variables)
+    var_index = {var: i for i, var in enumerate(variables)}
+    lineal = bqm.linear  ##  dict-> key: pueblo, value: soldados
+    interacciones = (
+        bqm.quadratic
+    )  ## dict -> key:tupla(pueblo1, pueblo2), value:soldados perdidos
+    n = len(bqm.variables)
+
+    # Crear la matriz de ceros
+    Q = np.zeros((n, n))
+
+    # Llamar al método para asignar valores diagonales
+    asignar_valores_diagonales(Q, lineal, variables)
+    asignar_terminos_cuadraticos(Q, interacciones, var_index, eliminar_bajo_diagonal)
+
+    # Configurar la visualización de matrices
+    np.set_printoptions(precision=2, suppress=True)
+
+    # Formatear los términos para eliminar decimales innecesarios
+    def formatear_valor(val):
+        return (
+            f"{val:.2f}" if isinstance(val, float) and val % 1 != 0 else f"{int(val)}"
+        )
+
+    imprimir_resultados_hamiltoniano(Q, lineal, interacciones, bqm, formatear_valor)
+
+
+def imprimir_resultados_hamiltoniano(Q, lineal, interacciones, bqm, formatear_valor):
+    """Imprime la matriz QUBO y los detalles del Hamiltoniano.
+
+    Args:
+        Q (numpy.ndarray): Matriz QUBO.
+        lineal (dict): Términos lineales del Hamiltoniano.
+        interacciones (dict): Términos cuadráticos del Hamiltoniano.
+        bqm (dimod.BinaryQuadraticModel): Modelo BQM.
+        formatear_valor (function): Función para formatear valores.
+    """
+    print("Matriz QUBO:")
+    print("-------------------------")
+    print(Q)
+    print("")
+
+    print("HAMILTONIANO DEL SISTEMA:")
+    print("-------------------------")
+    print(
+        "Término lineal:",
+        {var: formatear_valor(val) for var, val in sorted(lineal.items())},
+    )
+    print(
+        "Términos cuadráticos:",
+        {
+            (var1, var2): formatear_valor(val)
+            for (var1, var2), val in interacciones.items()
+        },
+    )
+    print("Offset:", formatear_valor(bqm.offset))
+    print("")
+
+
+def ejecucion_simulated_annealing(model, bqm, num_reads=10):
+    """Ejecuta Simulated Annealing para resolver el problema QUBO.
+
+    Args:
+        model (pyqubo.model.Model): Modelo PyQUBO compilado.
+        bqm (dimod.BinaryQuadraticModel): Modelo BQM.
+        num_reads (int): Número de lecturas a realizar.
+    """
+    sampler = neal.SimulatedAnnealingSampler()
     t_inicial = time.time()
-    sampleset = sampler.sample(
-        bqm, num_reads=10
-    )  # Ejecuta el algoritmo de optimización en el problema 100 veces. Devuelve un conjunto de muestras encontradas de minima energia.
+    sampleset = sampler.sample(bqm, num_reads=num_reads)
     t_final = time.time()
-    decoded_samples = model.decode_sampleset(
-        sampleset
-    )  # decoded_samples contiene información similar a sampleset, pero en un formato más fácil de entender y usar.
+    decoded_samples = model.decode_sampleset(sampleset)
     execution_time_SimulatedAnnealing = t_final - t_inicial
-    rounded_time = redondeoDecimalesSignificativos(execution_time_SimulatedAnnealing, 2)
+    rounded_time = redondeo_decimales_significativos(execution_time_SimulatedAnnealing)
 
+    imprimir_resultados_simulated_annealing(decoded_samples, rounded_time)
+
+
+def imprimir_resultados_simulated_annealing(decoded_samples, rounded_time):
     print("RESULTADOS SIMULATED ANNEALING:")
     print("-------------------------")
-    best_sample = min(
-        decoded_samples, key=lambda d: d.energy
-    )  # min(iterable, key=func) fuc= lambda d: d.energy función anonima que se aplica a cada elemento d. devuelve la energia de cada elemeto.
+    best_sample = min(decoded_samples, key=lambda d: d.energy)
     print(best_sample)
     print("")
 
     print("Tiempo de ejecución de Simulated Annealing:", rounded_time, "segundos")
 
 
-def redondeoDecimalesSignificativos(numero, n_decimales=2):
-    """
-    Redondea un número a un número específico de decimales significativos,
-    asegurando que al menos `n_decimales` dígitos se muestren después del punto decimal.
+def redondeo_decimales_significativos(numero, n_decimales=2):
+    """Redondea un número a un número específico de decimales significativos.
 
     Args:
         numero (float): El número a redondear.
-        n_decimales (int, opcional): El número mínimo de decimales que se mostrarán.
-                                      Debe ser un entero positivo. Por defecto es 2.
+        n_decimales (int): El número de decimales a mostrar.
 
     Returns:
         str: El número redondeado formateado como una cadena.
-             Retorna "-1" si el número no es decimal o si todos los dígitos decimales son cero.
+
+    Raises:
+        ValueError: Si el número no es decimal o si todos los dígitos decimales son cero.
     """
-    numero_str = str(numero)
+    if not isinstance(numero, (int, float)):
+        raise ValueError("El número debe ser un entero o un float.")
 
-    if "." not in numero_str:
-        return "-1"  # No es un número decimal
+    if not isinstance(
+        numero, float
+    ):  # Si es entero, lo convertimos a float para formatear
+        numero = float(numero)
 
-    decimales = numero_str[numero_str.index(".") + 1 :]
-
-    primer_no_cero_encontrado = False
-    posicion_no_cero = 0
-
-    for i, digito in enumerate(decimales):
-        if digito != "0":
-            primer_no_cero_encontrado = True
-            posicion_no_cero = i
-            break  # Salir del bucle al encontrar el primer dígito no cero
-
-    if not primer_no_cero_encontrado:
-        return "-1"  # Todos los dígitos decimales son cero
-
-    # Calcular la precisión (número total de decimales a mostrar)
-    precision = posicion_no_cero + n_decimales
-
-    # Formatear el número con la precisión calculada
-    return f"{numero:.{precision}f}"
+    formato = f".{n_decimales}f"  # Creamos el string de formato
+    return f"{numero:{formato}}"  # Aplicamos el formato
