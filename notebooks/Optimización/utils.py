@@ -226,7 +226,7 @@ def calculate_energy(H, solution, feed_dict=None):
     """Calcula la energía del Hamiltoniano de PyQUBO para una solución dada.
 
     Args:
-        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+        H: El Hamiltoniano de PyQUBO (expresión simbólica sin compilar).
         solution (dict): Diccionario donde las claves son los nombres de las variables
                        (e.g., 'x0', 'x1') y los valores son 0 o 1.
         feed_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
@@ -278,7 +278,7 @@ def visualize_energies_fixed_lambdas(H, feed_dict=None):
     """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
 
     Args:
-        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+        H: El Hamiltoniano de PyQUBO (expresión simbólica, sin compilar).
         feed_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
                                      Defaults to None.
     """
