@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import neal
 import numpy as np
 import time
+import re
+import itertools
 
 
 def definir_posiciones(dic_nodos, radio=1):
@@ -164,7 +166,7 @@ def imprimir_resultados_hamiltoniano(Q, lineal, interacciones, bqm, formatear_va
     print("")
 
 
-def ejecucion_simulated_annealing(model, bqm, num_reads=10):
+def ejecucion_simulated_annealing(model, bqm, num_reads=10, n_decimales=4):
     """Ejecuta Simulated Annealing para resolver el problema QUBO.
 
     Args:
@@ -178,7 +180,9 @@ def ejecucion_simulated_annealing(model, bqm, num_reads=10):
     t_final = time.time()
     decoded_samples = model.decode_sampleset(sampleset)
     execution_time_SimulatedAnnealing = t_final - t_inicial
-    rounded_time = redondeo_decimales_significativos(execution_time_SimulatedAnnealing)
+    rounded_time = redondeo_decimales_significativos(
+        execution_time_SimulatedAnnealing, n_decimales
+    )
 
     imprimir_resultados_simulated_annealing(decoded_samples, rounded_time)
 
@@ -216,3 +220,100 @@ def redondeo_decimales_significativos(numero, n_decimales=2):
 
     formato = f".{n_decimales}f"  # Creamos el string de formato
     return f"{numero:{formato}}"  # Aplicamos el formato
+
+
+def calculate_energy(H, solution, feed_dict=None):
+    """Calcula la energía del Hamiltoniano de PyQUBO para una solución dada.
+
+    Args:
+        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+        solution (dict): Diccionario donde las claves son los nombres de las variables
+                       (e.g., 'x0', 'x1') y los valores son 0 o 1.
+        feed_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
+                                     Defaults to None.
+
+    Returns:
+        float: El valor de la energía.
+    """
+    # Compila el Hamiltoniano de PyQUBO y lo convierte a BQM
+    compiled_qubo = H.compile()
+
+    # Si hay un feed_dict, usarlo al compilar a BQM
+    if feed_dict:
+        bqm = compiled_qubo.to_bqm(feed_dict=feed_dict)
+    else:
+        bqm = compiled_qubo.to_bqm()
+
+    # Calcula la energía para la solución dada
+    energy = bqm.energy(solution)
+
+    return energy
+
+
+def generate_all_solutions(H):
+    """Genera todas las soluciones posibles para las variables binarias en el Hamiltoniano.
+
+    Args:
+        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+
+    Returns:
+        list: Una lista de diccionarios, donde cada diccionario es una solución.
+    """
+    # Extrae los nombres de las variables del Hamiltoniano
+    variable_names = set(
+        re.findall(r"x_\d+", str(H))
+    )  # Busca patrones como 'x0', 'x1', etc.
+
+    n_variables = len(variable_names)
+    all_combinations = list(itertools.product([0, 1], repeat=n_variables))
+
+    solutions = []
+    for combination in all_combinations:
+        solution = {list(variable_names)[i]: combination[i] for i in range(n_variables)}
+        solutions.append(solution)
+    return solutions
+
+
+def visualize_energies_fixed_lambdas(H, feed_dict=None):
+    """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
+
+    Args:
+        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+        feed_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
+                                     Defaults to None.
+    """
+
+    all_solutions = generate_all_solutions(H)
+    energies = []
+    for solution in all_solutions:
+        energy = calculate_energy(H, solution, feed_dict)
+        energies.append(energy)
+
+    # Crear etiquetas para las soluciones (solo los valores de x_i)
+    solution_labels = []
+    for solution in all_solutions:
+        label = "".join(
+            str(solution[var]) for var in sorted(solution.keys())
+        )  # Combina los valores de x_i
+        solution_labels.append(label)
+
+    # Crear el gráfico de dispersión (scatter plot)
+    plt.figure(figsize=(12, 6))  # Ajusta el tamaño de la figura
+    x_values = range(
+        len(all_solutions)
+    )  # Crear valores para el eje x (índices de las soluciones)
+    plt.scatter(x_values, energies)  # Usar plt.scatter en lugar de plt.bar
+
+    # Añadir etiquetas y título
+    plt.xlabel("Solución (valores de x_i)")  # Cambiar la etiqueta del eje x
+    plt.ylabel("Energía")
+    plt.title("Energías para todas las soluciones")
+
+    # Personalizar los ticks del eje x para mostrar las soluciones
+    plt.xticks(x_values, solution_labels, rotation=45, ha="right")
+
+    # Ajustar márgenes para evitar que las etiquetas se corten
+    plt.tight_layout()
+
+    # Mostrar el gráfico
+    plt.show()
