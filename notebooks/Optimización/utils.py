@@ -180,7 +180,10 @@ def ejecucion_simulated_annealing(H, lambda_dict=None, num_reads=10, n_decimales
     t_inicial = time.time()
     sampleset = sampler.sample(bqm, num_reads=num_reads)
     t_final = time.time()
-    decoded_samples = model.decode_sampleset(sampleset, feed_dict=lambda_dict)
+    if lambda_dict:
+        decoded_samples = model.decode_sampleset(sampleset, feed_dict=lambda_dict)
+    else:
+        decoded_samples = model.decode_sampleset(sampleset)
     execution_time_SimulatedAnnealing = t_final - t_inicial
     rounded_time = redondeo_decimales_significativos(
         execution_time_SimulatedAnnealing, n_decimales
