@@ -100,13 +100,14 @@ def asignar_terminos_cuadraticos(
             Q[i, j] = Q[j, i] = coef
 
 
-def mostrar_matriz_hamiltoniano(bqm, eliminar_bajo_diagonal=True):
+def mostrar_matriz_hamiltoniano(H, lambda_dict=None, eliminar_bajo_diagonal=True):
     """Muestra la matriz QUBO y los detalles del Hamiltoniano.
 
     Args:
         bqm (dimod.BinaryQuadraticModel): Modelo BQM.
         eliminar_bajo_diagonal (bool): Indica si se eliminan los valores debajo de la diagonal.
     """
+    bqm = compilar_hamiltoniano(H, lambda_dict)[1]  # Compila el Hamiltoniano
     variables = sorted(bqm.variables)
     var_index = {var: i for i, var in enumerate(variables)}
     lineal = bqm.linear  ##  dict-> key: pueblo, value: soldados
@@ -166,7 +167,7 @@ def imprimir_resultados_hamiltoniano(Q, lineal, interacciones, bqm, formatear_va
     print("")
 
 
-def ejecucion_simulated_annealing(model, bqm, num_reads=10, n_decimales=4):
+def ejecucion_simulated_annealing(H, lambda_dict=None, num_reads=10, n_decimales=4):
     """Ejecuta Simulated Annealing para resolver el problema QUBO.
 
     Args:
@@ -174,11 +175,12 @@ def ejecucion_simulated_annealing(model, bqm, num_reads=10, n_decimales=4):
         bqm (dimod.BinaryQuadraticModel): Modelo BQM.
         num_reads (int): Número de lecturas a realizar.
     """
+    model, bqm = compilar_hamiltoniano(H, lambda_dict)  # Compila el Hamiltoniano
     sampler = neal.SimulatedAnnealingSampler()
     t_inicial = time.time()
     sampleset = sampler.sample(bqm, num_reads=num_reads)
     t_final = time.time()
-    decoded_samples = model.decode_sampleset(sampleset)
+    decoded_samples = model.decode_sampleset(sampleset, feed_dict=lambda_dict)
     execution_time_SimulatedAnnealing = t_final - t_inicial
     rounded_time = redondeo_decimales_significativos(
         execution_time_SimulatedAnnealing, n_decimales
@@ -222,7 +224,7 @@ def redondeo_decimales_significativos(numero, n_decimales=2):
     return f"{numero:{formato}}"  # Aplicamos el formato
 
 
-def calculate_energy(H, solution, feed_dict=None):
+def calculate_energy(H, solution, lambda_dict):
     """Calcula la energía del Hamiltoniano de PyQUBO para una solución dada.
 
     Args:
@@ -235,14 +237,7 @@ def calculate_energy(H, solution, feed_dict=None):
     Returns:
         float: El valor de la energía.
     """
-    # Compila el Hamiltoniano de PyQUBO y lo convierte a BQM
-    compiled_qubo = H.compile()
-
-    # Si hay un feed_dict, usarlo al compilar a BQM
-    if feed_dict:
-        bqm = compiled_qubo.to_bqm(feed_dict=feed_dict)
-    else:
-        bqm = compiled_qubo.to_bqm()
+    bqm = compilar_hamiltoniano(H, lambda_dict)[1]  # Compila el Hamiltoniano
 
     # Calcula la energía para la solución dada
     energy = bqm.energy(solution)
@@ -274,7 +269,7 @@ def generate_all_solutions(H):
     return solutions
 
 
-def visualize_energies_fixed_lambdas(H, feed_dict=None):
+def visualize_energies_fixed_lambdas(H, lambda_dict=None):
     """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
 
     Args:
@@ -286,7 +281,7 @@ def visualize_energies_fixed_lambdas(H, feed_dict=None):
     all_solutions = generate_all_solutions(H)
     energies = []
     for solution in all_solutions:
-        energy = calculate_energy(H, solution, feed_dict)
+        energy = calculate_energy(H, solution, lambda_dict)
         energies.append(energy)
 
     # Crear etiquetas para las soluciones (solo los valores de x_i)
@@ -317,3 +312,25 @@ def visualize_energies_fixed_lambdas(H, feed_dict=None):
 
     # Mostrar el gráfico
     plt.show()
+
+
+def compilar_hamiltoniano(H, lambda_dict):
+    """Compila el Hamiltoniano de PyQUBO y lo convierte a un modelo BQM.
+
+    Args:
+        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+        lambda_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
+
+    Returns:
+        tuple: El modelo compilado y el modelo BQM.
+    """
+    # Compila el Hamiltoniano de PyQUBO
+    model = H.compile()
+
+    # Si hay un lambda_dict, usarlo al compilar a BQM
+    if lambda_dict:
+        bqm = model.to_bqm(feed_dict=lambda_dict)
+    else:
+        bqm = model.to_bqm()
+
+    return model, bqm
