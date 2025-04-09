@@ -27,7 +27,7 @@ def definir_posiciones(dic_nodos, radio=1):
     return posiciones
 
 
-def crear_SimpleGrafo_node_weight(dic_nodos, dic_aristas, titulo):
+def crear_SimpleGrafo_node_weight(dic_nodos, dic_aristas, titulo=None):
     """Crea y visualiza un grafo con pesos en los nodos.
 
     Args:
@@ -42,8 +42,8 @@ def crear_SimpleGrafo_node_weight(dic_nodos, dic_aristas, titulo):
     G.add_nodes_from(dic_nodos.keys())
 
     # Agregar aristas según las enemistades
-    for pueblo, enemigo in dic_aristas.items():
-        G.add_edge(pueblo, enemigo)
+    for nodo1, nodo2 in dic_aristas.items():
+        G.add_edge(nodo1, nodo2)
 
     # Define las posiciones de los nodos
     posiciones = definir_posiciones(dic_nodos)
@@ -67,7 +67,8 @@ def crear_SimpleGrafo_node_weight(dic_nodos, dic_aristas, titulo):
     ax = plt.gca()
     ax.margins(0.20)
     plt.axis("off")
-    plt.title(titulo)
+    if titulo:
+        plt.title(titulo)
     plt.show()
 
 
@@ -268,18 +269,19 @@ def generate_all_solutions(H):
     Returns:
         list: Una lista de diccionarios, donde cada diccionario es una solución.
     """
-    # Extrae los nombres de las variables del Hamiltoniano
-    variable_names = set(
-        re.findall(r"x_\d+", str(H))
-    )  # Busca patrones como 'x0', 'x1', etc.
+    # Extrae y ordena los nombres de las variables por su índice
+    variable_names = sorted(
+        set(re.findall(r"x_\d+", str(H))), key=lambda x: int(x.split("_")[1])
+    )
 
     n_variables = len(variable_names)
-    all_combinations = list(itertools.product([0, 1], repeat=n_variables))
+    all_combinations = itertools.product([0, 1], repeat=n_variables)
 
     solutions = []
     for combination in all_combinations:
-        solution = {list(variable_names)[i]: combination[i] for i in range(n_variables)}
+        solution = {variable_names[i]: combination[i] for i in range(n_variables)}
         solutions.append(solution)
+
     return solutions
 
     """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
