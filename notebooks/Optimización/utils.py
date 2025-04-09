@@ -72,6 +72,11 @@ def crear_SimpleGrafo_node_weight(dic_nodos, dic_aristas, titulo):
 
 
 def asignar_valores_diagonales(Q, lineal, variables):
+    """Asigna los valores lineales a la diagonal de la matriz Q.
+    Q: Matriz cuadrada de ceros.
+    lineal: Términos lineales del Hamiltoniano.
+    variables: Lista de variables del Hamiltoniano.
+    """
     # Crear la lista de valores lineales en función del índice de las variables
     diagonal_values = [
         lineal[var] for var in variables
@@ -89,6 +94,12 @@ def asignar_valores_diagonales(Q, lineal, variables):
 def asignar_terminos_cuadraticos(
     Q, interacciones, var_index, eliminar_bajo_diagonal=True
 ):
+    """Asigna los términos cuadráticos a la matriz Q.
+    Q: Matriz cuadrada de ceros.
+    interacciones: Términos cuadráticos del Hamiltoniano.
+    var_index: Diccionario que mapea las variables a sus índices en la matriz Q.
+    eliminar_bajo_diagonal: Si es True, elimina los valores debajo de la diagonal.
+    """
     for (var1, var2), coef in interacciones.items():
         i, j = var_index[var1], var_index[var2]
         if eliminar_bajo_diagonal:
@@ -104,16 +115,15 @@ def mostrar_matriz_hamiltoniano(H, lambda_dict=None, eliminar_bajo_diagonal=True
     """Muestra la matriz QUBO y los detalles del Hamiltoniano.
 
     Args:
-        bqm (dimod.BinaryQuadraticModel): Modelo BQM.
+        H: Expresión del hamiltoniano dependiente de las variables binarias y coeficientes de lagrange (placeholders).
+        lambda_dict (dict, optional): Diccionario que mapea los coeficientes de lagrange (Placeholder) a sus valores numéricos.
         eliminar_bajo_diagonal (bool): Indica si se eliminan los valores debajo de la diagonal.
     """
     bqm = compilar_hamiltoniano(H, lambda_dict)[1]  # Compila el Hamiltoniano
     variables = sorted(bqm.variables)
     var_index = {var: i for i, var in enumerate(variables)}
-    lineal = bqm.linear  ##  dict-> key: pueblo, value: soldados
-    interacciones = (
-        bqm.quadratic
-    )  ## dict -> key:tupla(pueblo1, pueblo2), value:soldados perdidos
+    lineal = bqm.linear  ##  dict-> key: var1, value
+    interacciones = bqm.quadratic  ## dict -> key:tupla(var1, var2), values
     n = len(bqm.variables)
 
     # Crear la matriz de ceros
@@ -171,9 +181,10 @@ def ejecucion_simulated_annealing(H, lambda_dict=None, num_reads=10, n_decimales
     """Ejecuta Simulated Annealing para resolver el problema QUBO.
 
     Args:
-        model (pyqubo.model.Model): Modelo PyQUBO compilado.
-        bqm (dimod.BinaryQuadraticModel): Modelo BQM.
-        num_reads (int): Número de lecturas a realizar.
+        H: El Hamiltoniano de PyQUBO (expresión simbólica).
+        lambda_dict (dict, optional): Diccionario que mapea los coeficientes de lagrange (Placeholder) a sus valores numéricos.
+        num_reads (int): Número de lecturas para el sampler.
+        n_decimales (int): Número de decimales significativos para el tiempo de ejecución.
     """
     model, bqm = compilar_hamiltoniano(H, lambda_dict)  # Compila el Hamiltoniano
     sampler = neal.SimulatedAnnealingSampler()
@@ -271,8 +282,6 @@ def generate_all_solutions(H):
         solutions.append(solution)
     return solutions
 
-
-def visualize_energies_fixed_lambdas(H, lambda_dict=None):
     """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
 
     Args:
@@ -317,8 +326,64 @@ def visualize_energies_fixed_lambdas(H, lambda_dict=None):
     plt.show()
 
 
+def visualize_energies(hamiltonian, lambda_dict: dict = None) -> None:
+    """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
+
+    Args:
+        hamiltonian: El Hamiltoniano de PyQUBO (expresión simbólica, sin compilar).
+        lambda_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
+                                     Defaults to None.
+    """
+
+    all_solutions = generate_all_solutions(hamiltonian)
+    energies = []
+    for solution in all_solutions:
+        energy = calculate_energy(hamiltonian, solution, lambda_dict)
+        energies.append(energy)
+
+    # Crear etiquetas para las soluciones (solo los valores de x_i)
+    solution_labels = []
+    for solution in all_solutions:
+        label = "".join(
+            str(solution[var]) for var in sorted(solution.keys())
+        )  # Combina los valores de x_i
+        solution_labels.append(label)
+
+    # Crear el gráfico de dispersión (scatter plot)
+    plt.figure(figsize=(12, 6))  # Ajusta el tamaño de la figura
+    x_values = range(
+        len(all_solutions)
+    )  # Crear valores para el eje x (índices de las soluciones)
+    plt.scatter(x_values, energies)  # Usar plt.scatter en lugar de plt.bar
+
+    # Añadir etiquetas y título
+    plt.xlabel("Solución (valores de x_i)")  # Cambiar la etiqueta del eje x
+    plt.ylabel("Energía")
+
+    title = "Energías para todas las soluciones"
+    if lambda_dict:
+        lambda_str = ", ".join(
+            [f"{k}={v}" for k, v in lambda_dict.items()]
+        )  # Formatear los valores de lambda
+        title += f" ({lambda_str})"
+    plt.title(title)
+
+    # Personalizar los ticks del eje x para mostrar las soluciones
+    plt.xticks(x_values, solution_labels, rotation=45, ha="right")
+
+    # Ajustar márgenes para evitar que las etiquetas se corten
+    plt.tight_layout()
+
+    # Mostrar el gráfico
+    plt.show()
+
+
 def compilar_hamiltoniano(H, lambda_dict):
     """Compila el Hamiltoniano de PyQUBO y lo convierte a un modelo BQM.
+    H: El Hamiltoniano de PyQUBO (expresión simbólica, sin compilar).
+    lambda_dict (dict, optional): Diccionario que mapea los coeficientes de lagrange (Placeholder) a sus valores numéricos.
+
+
 
     Args:
         H: El Hamiltoniano de PyQUBO (expresión simbólica).
