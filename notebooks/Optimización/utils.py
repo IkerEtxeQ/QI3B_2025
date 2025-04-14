@@ -284,49 +284,6 @@ def generate_all_solutions(H):
 
     return solutions
 
-    """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
-
-    Args:
-        H: El Hamiltoniano de PyQUBO (expresión simbólica, sin compilar).
-        feed_dict (dict, optional): Diccionario que mapea los Placeholder a sus valores numéricos.
-                                     Defaults to None.
-    """
-
-    all_solutions = generate_all_solutions(H)
-    energies = []
-    for solution in all_solutions:
-        energy = calculate_energy(H, solution, lambda_dict)
-        energies.append(energy)
-
-    # Crear etiquetas para las soluciones (solo los valores de x_i)
-    solution_labels = []
-    for solution in all_solutions:
-        label = "".join(
-            str(solution[var]) for var in sorted(solution.keys())
-        )  # Combina los valores de x_i
-        solution_labels.append(label)
-
-    # Crear el gráfico de dispersión (scatter plot)
-    plt.figure(figsize=(12, 6))  # Ajusta el tamaño de la figura
-    x_values = range(
-        len(all_solutions)
-    )  # Crear valores para el eje x (índices de las soluciones)
-    plt.scatter(x_values, energies)  # Usar plt.scatter en lugar de plt.bar
-
-    # Añadir etiquetas y título
-    plt.xlabel("Solución (valores de x_i)")  # Cambiar la etiqueta del eje x
-    plt.ylabel("Energía")
-    plt.title("Energías para todas las soluciones")
-
-    # Personalizar los ticks del eje x para mostrar las soluciones
-    plt.xticks(x_values, solution_labels, rotation=45, ha="right")
-
-    # Ajustar márgenes para evitar que las etiquetas se corten
-    plt.tight_layout()
-
-    # Mostrar el gráfico
-    plt.show()
-
 
 def visualize_energies(hamiltonian, lambda_dict: dict = None) -> None:
     """Visualiza las energías para cada solución con el Hamiltoniano dado usando un scatter plot.
