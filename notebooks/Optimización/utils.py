@@ -8,7 +8,7 @@ import itertools
 import math
 from itertools import product
 import sympy as sp
-from pyqubo import Binary, Placeholder, Constraint
+from pyqubo import Binary, Placeholder
 from IPython.display import display, Math
 
 
