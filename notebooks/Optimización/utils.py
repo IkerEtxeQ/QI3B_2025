@@ -266,7 +266,7 @@ def calculate_energy(H, solution, lambda_dict):
 
 
 def generate_all_solutions(H):
-    """Genera todas las soluciones posibles para las variables binarias en el Hamiltoniano.
+    """Genera todas las soluciones posibles para las variables binarias 'x_i' y 'y_i' en el Hamiltoniano.
 
     Args:
         H: El Hamiltoniano de PyQUBO (expresión simbólica).
@@ -274,9 +274,13 @@ def generate_all_solutions(H):
     Returns:
         list: Una lista de diccionarios, donde cada diccionario es una solución.
     """
-    # Extrae y ordena los nombres de las variables por su índice
+    # Buscar solo variables que empiecen con x_ o y_
     variable_names = sorted(
-        set(re.findall(r"x_\d+", str(H))), key=lambda x: int(x.split("_")[1])
+        set(re.findall(r"[xy]_\d+", str(H))),
+        key=lambda x: (
+            x[0],
+            int(x.split("_")[1]),
+        ),  # ordena por letra y luego por índice numérico
     )
 
     n_variables = len(variable_names)
@@ -321,7 +325,7 @@ def visualize_energies(hamiltonian, lambda_dict: dict = None) -> None:
     plt.scatter(x_values, energies)  # Usar plt.scatter en lugar de plt.bar
 
     # Añadir etiquetas y título
-    plt.xlabel("Solución (valores de x_i)")  # Cambiar la etiqueta del eje x
+    plt.xlabel("Solución")  # Cambiar la etiqueta del eje x
     plt.ylabel("Energía")
 
     title = "Energías para todas las soluciones"
@@ -388,35 +392,12 @@ def construccion_HR(Omega, R):
 
     NR = len(Omega)  # Calcula el número de términos en la suma.
 
-    # 0. Definición de los valores simbólicos de lambda
-    lambdas = {k: sp.symbols(f"lambda_{k}") for k in range(1, NR + 1)}
+    # terminos_HR_continuo = HR_continuo(
+    #     NR, Omega, R
+    # )  # Genera la expresión simbólica del Hamiltoniano H^R
+    HR_PYQUBO = HR_QUBO(NR, Omega, R)  # Genera la expresión QUBO del Hamiltoniano
 
-    # 1. Construcción de la expresión simbólica (SymPy)
-    x = sp.IndexedBase("x")  # Define x como una variable indexada (x_i)
-    H_R = 0  # Inicializa el Hamiltoniano
-    terminos_HR = []  # Lista para guardar las expresiones de cada término
-
-    for k in range(1, NR + 1):
-        sum_omega = sum(x[i] for i in Omega[k])  # Sumatoria de x_i para i en Omega_k
-        term = lambdas[k] * (sum_omega - R[k]) ** 2
-        H_R += term
-        terminos_HR.append(term)
-
-    # 2. Visualización en LaTeX
-    print("Hamiltoniano de Restricciones:")
-    display(Math(sp.latex(H_R)))
-
-    # 3. Preparación para PyQUBO
-    qubo_expression = 0
-    for k in range(1, NR + 1):
-        # Usamos Binary en PyQUBO para las variables x_i
-        X = {i: Binary(f"x_{i}") for i in Omega[k]}
-        sum_omega = sum(X[i] for i in Omega[k])
-        # Usamos Placeholder para los coeficientes lambda_k
-        lambda_k = Placeholder(f"lambda_{k}")
-        qubo_expression += lambda_k * (sum_omega - R[k]) ** 2
-
-    return qubo_expression, terminos_HR
+    return HR_PYQUBO
 
 
 def visualizar_parábolas_HR(
@@ -605,3 +586,39 @@ def calcular_conjunto_R_multi_valor(valores_permitidos):
         R_QUBO_dict[index] = R_QUBO
 
     return R_dict, R_QUBO_dict
+
+
+def HR_QUBO(NR, Omega, R):
+    qubo_expression = 0
+    for k in range(1, NR + 1):
+        X = {i: Binary(f"x_{i}") for i in Omega[k]}
+        sum_omega = sum(X[i] for i in Omega[k])
+        lambda_k = Placeholder(f"lambda_{k}")
+        R_keys = list(R.keys())  # lista ordenada de claves
+        clave = R_keys[k - 1]
+        R2 = next(iter(R[clave]))
+        qubo_expression += lambda_k * (sum_omega - R2) ** 2
+
+    return qubo_expression
+
+
+def HR_continuo(NR, Omega, R):
+    # 0. Definición de los valores simbólicos de lambda
+    lambdas = {k: sp.symbols(f"lambda_{k}") for k in range(1, NR + 1)}
+
+    # 1. Construcción de la expresión simbólica (SymPy)
+    x = sp.IndexedBase("x")  # Define x como una variable indexada (x_i)
+    H_R = 0  # Inicializa el Hamiltoniano
+    terminos_HR = []  # Lista para guardar las expresiones de cada término
+
+    for k in range(1, NR + 1):
+        sum_omega = sum(x[i] for i in Omega[k])  # Sumatoria de x_i para i en Omega_k
+        term = lambdas[k] * (sum_omega - R[k]) ** 2
+        H_R += term
+        terminos_HR.append(term)
+
+    # 2. Visualización en LaTeX
+    print("Hamiltoniano de Restricciones:")
+    display(Math(sp.latex(H_R)))
+
+    return terminos_HR
