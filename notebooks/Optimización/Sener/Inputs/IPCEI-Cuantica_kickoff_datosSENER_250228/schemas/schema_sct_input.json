@@ -1,0 +1,1443 @@
+{
+"$schema": "http://json-schema.org/draft-07/schema#",
+"title": "EMS - Sistema Control Terciario, Datos Entrada Usuario",
+"description": "json de datos introducidos por el Usuario en la API",
+"type": "object",
+"properties": {
+	"G": {
+		"description": "Vector que define cada Generador existente",
+		"type": "array",
+		"minItems": 1,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Generador (opcional)",
+					"type": "string"
+				},
+				"bus": {
+					"description": "Nombre del Bus al que se conecta este equipo (opcional, default: bus#0)",
+					"type": "string"
+				},
+				"PminOpera": {
+					"description": "Potencia [MW] de Salida Mínima de Operación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PmaxOpera": {
+					"description": "Potencia [MW] de Salida Máxima de Operación (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Rs": {
+					"description": "Rampa de Subida de Potencia [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Rb": {
+					"description": "Rampa de Bajada de Potencia [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Ca": {
+					"description": "Coste de Arranque [EUR/arranque] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Cf": {
+					"description": "Coste Fijo [EUR/hora] por tenerlo en Operación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Cv": {
+					"description": "Coste en función de la generación [EUR/MWh] durante Operación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Pini": {
+					"description": "Condición Inicial: Potencia [MW] que el Generador está produciendo un instante de tiempo antes de la simulación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Produccion": {
+					"description": "(solo si 'Tipo' tiene valor 'custom') Objeto que define qué producción puede dar el Generador",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"Pot": {
+							"description": "Vector de Potencia [MW] Disponible en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						}
+					},
+					"required": [
+						"Pot"
+					],
+					"additionalItems": false
+				}
+			},
+			"required": [
+				"Produccion"
+			],
+			"additionalItems": false
+		}
+	},		
+	"C": {
+		"description": "Vector que define cada Consumidor existente",
+		"type": "array",
+		"minItems": 1,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Consumidor (opcional)",
+					"type": "string"
+				},
+				"bus": {
+					"description": "Nombre del Bus al que se conecta este equipo (opcional, default: bus#0)",
+					"type": "string"
+				},
+				"PminOpera": {
+					"description": "Potencia [MW] de Entrada Mínima admisible (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PmaxOpera": {
+					"description": "Potencia [MW] de Entrada Máxima admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Rs": {
+					"description": "Rampa de Subida de Potencia [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Rb": {
+					"description": "Rampa de Bajada de Potencia [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Emin": {
+					"description": "Ratio Energía Total [tanto por uno] respecto a Energía total demandada que siempre se proveerá como mínimo (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0,
+					"maximum": 1
+				}	,			
+				"Emax": {
+					"description": "Ratio Energía Total [tanto por uno] respecto a Energía total demandada que se proveerá como máximo (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Pini": {
+					"description": "Condición Inicial: Potencia [MW] que el Consumidor está consumiendo un instante de tiempo antes de la simulación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Consumo": {
+					"description": "Objeto que define qué potencia demanda el Consumidor",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"Pot": {
+							"description": "Vector de Potencia [MW] Demandada en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						}
+					},
+					"required": ["Pot"],
+					"additionalItems": false
+				},
+				"Costes": {
+					"description": "Objeto que define qué costes (o ingresos) se generan por desviar la potencia dada al Aconsumidor respecto de la que demandó",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"Cc_d": {
+							"description": "Vector de Costes [EUR/MWh] por Déficit en la Energía proveída al Consumidor en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						},
+						"Cc_e": {
+							"description": "Vector de Costes/Valor [EUR/MWh] por Exceso en la Energía proveída al Consumidor en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						}
+					},
+					"required": ["Cc_d", "Cc_e"],
+					"additionalItems": false
+				}
+
+			},
+			"required": [
+				"Consumo", "Costes"
+			],
+			"additionalItems": false
+		}
+	},		
+	"A": {
+		"description": "Vector que define cada Almacenamiento existente",
+		"type": "array",
+		"minItems": 1,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Almacenamiento (opcional)",
+					"type": "string"
+				},
+				"bus": {
+					"description": "Nombre del Bus al que se conecta este equipo (opcional, default: bus#0)",
+					"type": "string"
+				},
+				"Cmax": {
+					"description": "Nivel de Carga [MWh] que se puede llegar a Almacenar",
+					"type": "number",
+					"minimum": 0
+				},					
+				"RendC": {
+					"description": "Rendimiento [tanto por uno] durante la Carga (opcional, default: 1)",
+					"type": "number",
+					"minimum": 0,
+					"maximum": 1
+				},				
+				"PminC": {
+					"description": "Potencia [MW] de Carga Mínima admisible (opcional, default: 0)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será a cualquier nivel en que se encuentre el Almacenamiento",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Si se especifica una matriz, podrá definirse una potencia límite en función del nivel de almacenamiento que haya en cada momento, no constante.",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"description": "Será una matriz con 3 columnas. Cada fila de la matriz corresponde a una potencia límite, asociada a un rango de niveles de carga en el almacenamiento",
+								"type": "array",
+								"minItems": 3,
+								"maxItems": 3,
+								"items": [
+									{
+										"description": "La primera columna define el Nivel de Carga (tanto por uno [0:1]) inicial desde el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La segunda columna define el Nivel de Carga (tanto por uno [0:1]) final hasta el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La tercera columna es el valor de Potencia que aplica en cada rango de niveles de almacenamiento",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									}
+								]
+							}
+						}
+					]
+				},
+				"PmaxC": {
+					"description": "Potencia [MW] de Carga Máxima admisible (opcional, default: sin límites)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será a cualquier nivel en que se encuentre el Almacenamiento",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Si se especifica una matriz, podrá definirse una potencia límite en función del nivel de almacenamiento que haya en cada momento, no constante.",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"description": "Será una matriz con 3 columnas. Cada fila de la matriz corresponde a una potencia límite, asociada a un rango de niveles de carga en el almacenamiento",
+								"type": "array",
+								"minItems": 3,
+								"maxItems": 3,
+								"items": [
+									{
+										"description": "La primera columna define el Nivel de Carga (tanto por uno [0:1]) inicial desde el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La segunda columna define el Nivel de Carga (tanto por uno [0:1]) final hasta el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La tercera columna es el valor de Potencia que aplica en cada rango de niveles de almacenamiento",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									}
+								]
+							}
+						}
+					]
+				},
+				"RsC": {
+					"description": "Rampa de Subida de Potencia Carga [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RbC": {
+					"description": "Rampa de Bajada de Potencia Carga [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CaC": {
+					"description": "Coste de Iniciar la Carga [EUR/arranque] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CfC": {
+					"description": "Coste Fijo [EUR/hora] por tenerlo en Carga (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CvC": {
+					"description": "Coste en función de la Energía Cargada [EUR/MWh] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RendD": {
+					"description": "Rendimiento [tanto por uno] durante la Descarga (opcional, default: 1)",
+					"type": "number",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"PminD": {
+					"description": "Potencia [MW] de Descarga Mínima admisible (opcional, default: 0)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será a cualquier nivel en que se encuentre el Almacenamiento",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Si se especifica una matriz, podrá definirse una potencia límite en función del nivel de almacenamiento que haya en cada momento, no constante.",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"description": "Será una matriz con 3 columnas. Cada fila de la matriz corresponde a una potencia límite, asociada a un rango de niveles de carga en el almacenamiento",
+								"type": "array",
+								"minItems": 3,
+								"maxItems": 3,
+								"items": [
+									{
+										"description": "La primera columna define el Nivel de Carga (tanto por uno [0:1]) inicial desde el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La segunda columna define el Nivel de Carga (tanto por uno [0:1]) final hasta el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La tercera columna es el valor de Potencia que aplica en cada rango de niveles de almacenamiento",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									}
+								]
+							}
+						}
+					]
+				},
+				"PmaxD": {
+					"description": "Potencia [MW] de Descarga Máxima admisible (opcional, default: sin límites)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será a cualquier nivel en que se encuentre el Almacenamiento",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Si se especifica una matriz, podrá definirse una potencia límite en función del nivel de almacenamiento que haya en cada momento, no constante.",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"description": "Será una matriz con 3 columnas. Cada fila de la matriz corresponde a una potencia límite, asociada a un rango de niveles de carga en el almacenamiento",
+								"type": "array",
+								"minItems": 3,
+								"maxItems": 3,
+								"items": [
+									{
+										"description": "La primera columna define el Nivel de Carga (tanto por uno [0:1]) inicial desde el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La segunda columna define el Nivel de Carga (tanto por uno [0:1]) final hasta el que se aplica la potencia límite",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									},
+									{
+										"description": "La tercera columna es el valor de Potencia que aplica en cada rango de niveles de almacenamiento",
+										"type": "number",
+										"minimum": 0,
+										"maximum": 1
+									}
+								]
+							}
+						}
+					]
+				},
+				"RsD": {
+					"description": "Rampa de Subida de Potencia Descarga [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RbD": {
+					"description": "Rampa de Bajada de Potencia Descarga [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CaD": {
+					"description": "Coste de Iniciar la Descarga [EUR/arranque] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CfD": {
+					"description": "Coste Fijo [EUR/hora] por tenerlo en Descarga (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CvD": {
+					"description": "Coste en función de la Energía Descarga [EUR/MWh] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CaNm": {
+					"description": "Coste/Valor por mantener un nivel en el almacenamiento [EUR/MWh/h] (opcional, default: 0)",
+					"type": "number"
+				},
+				"CaN": {
+					"description": "Coste/Valor del Nivel que quede al FINAL remanente [EUR/MWh] (opcional, default: 0)",
+					"type": "number",
+					"maximum": 0
+				},
+				"CaRC": {
+					"description": "Coste por cambiar régimen de Carga [EUR/MWcambiado]. Se usa para minimizar arranca-para al cargar (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CaRD": {
+					"description": "Coste por cambiar régimen de Descarga [EUR/MWcambiado]. Se usa para minimizar arranca-para al descargar (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Cini": {
+					"description": "Condición Inicial: Nivel [MWh] que tiene ya el Almacenamiento un instante de tiempo antes de la simulación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Pini": {
+					"description": "Condición Inicial: Potencia [MW] que el Almacenamiento está cargando (+) o Descargando (-) un instante de tiempo antes de la simulación (opcional, default: 0)",
+					"type": "number"
+				},
+				"Compromisos": {
+					"description": "Compromisos de Nivel que debe tener el Almacenamiento, y sus costes asociados en caso de incumplimiento (opcional, default: 0)",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"Nivel": {
+							"description": "Vector del Nivel Almacenado [MWh] que que se ha comprometido tener almacenado en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						},
+						"CaNd": {
+							"description": "Vector de Costes [EUR/MWh/h] por Déficit del nivel realmente almacenado en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						},
+						"CaNe": {
+							"description": "Vector de Costes [EUR/MWh/h] por Exceso del nivel realmente almacenado en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						}						
+					},
+					"required": [
+						"Nivel", "CaNd", "CaNe"
+					],
+					"additionalItems": false
+				}
+			},
+			"required": [
+				"Cmax"
+			],
+			"additionalItems": false
+		}
+	},		
+	"R": {
+		"description": "Vector que define cada Punto de Conexión a Red (externa, Mercado dodne se puede exportar=vender o importar=comprar)",
+		"type": "array",
+		"minItems": 1,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre de esta Conexióna  Red externa (opcional)",
+					"type": "string"
+				},
+				"bus": {
+					"description": "Nombre del Bus al que se conecta este equipo (opcional, default: bus#0)",
+					"type": "string"
+				},
+				"PminE": {
+					"description": "Potencia [MW] Mínima que se puede Exportar a la Red (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PmaxE": {
+					"description": "Potencia [MW] Máxima que se puede Exportar a la Red (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RsE": {
+					"description": "Rampa de Subida de Potencia Exportada [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RbE": {
+					"description": "Rampa de Bajada de Potencia Exportada [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PminI": {
+					"description": "Potencia [MW] Mínima que se puede Importar desde la Red (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PmaxI": {
+					"description": "Potencia [MW] Máxima que se puede Importar desde la Red (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RsI": {
+					"description": "Rampa de Subida de Potencia Importada [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RbI": {
+					"description": "Rampa de Bajada de Potencia Importada [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Pini": {
+					"description": "Condición Inicial: Potencia [MW] que se está exportando a la Red (-) o Importando desde la Red (+) un instante de tiempo antes de la simulación (opcional, default: 0)",
+					"type": "number"
+				},
+				"Compromisos": {
+					"description": "Objeto que define qué potencia está comprometida que se exportará/venderá o Importará/comprará a la Red (opcional, default 0)",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"Pot": {
+							"description": "Vector de Potencia [MW] comprometida que se exportará (+) hacia la Red, o que se importará (-) de la Red en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						}
+					},
+					"required": ["Pot"],
+					"additionalItems": false
+				},
+				"Costes": {
+					"description": "Objeto que define qué costes (o ingresos) se generan por, exportar o importar, de menos o de más, respecto a la potencia comprometida",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"CRd_E": {
+							"description": "Vector de Costes [EUR/MWh] por Déficit en la Energía Exportada a la Red en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						},
+						"CRe_E": {
+							"description": "Vector de Costes/valor [EUR/MWh] por Exceso en la Energía Exportada a la Red en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						},
+						"CRd_I": {
+							"description": "Vector de Costes/valor [EUR/MWh] por Déficit en la Energía Importada de la Red en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						},
+						"CRe_I": {
+							"description": "Vector de Costes [EUR/MWh] por Exceso en la Potencia Importada de la Red en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						}
+					},
+					"required": ["CRd_E", "CRe_E", "CRd_I", "CRe_I"],
+					"additionalItems": false
+				},
+				"BandaCapacidad": {
+					"description": "Objeto que define qué capacidad [MW] máxima de Banda de Regulación de puede ofertar/adjudicar respecto de la potencia importada en cada momento, distinguiendo entre banda a subir y banda a bajar. Opcional: default no hay regulación secundaria",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"PotMaxS": {
+							"description": "Vector de Potencia [MW] máxima a subir que se puede ofertar/adjudicar en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						},
+						"PotMaxB": {
+							"description": "Vector de Potencia [MW] máxima a bajar (en valor absoluto) que se puede ofertar/adjudicar en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"minimum": 0
+							}
+						},
+						"SBequal": {
+							"description": "Si True, fuerza a que la banda a Subir sea igual a la banda a Bajar en cada instante de tiempo. Si False, puede elegir la potencia de banda a Subir y a Bajar sin condicionantes entre ellos. Opcional, default: False (elige cada sentido por separado)",
+							"type": "boolean"
+						},
+						"CbS": {
+							"description": "Vector de Precios [EUR/MW] (deberían ser negativos porque son ingresos) a la que remunera la Capacidad de Banda a Dubir cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number",
+								"maximum": 0
+							}
+						},
+						"CbB": {
+							"description": "Vector de Precios [EUR/MW] (deberían ser negativos porque son ingresos) a la que remunera la Capacidad de Banda a Dubir cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						},
+						"RespaldoS": {
+							"description": "Matriz 2D con tantas filas como equipos/activos de respaldo haya (al menos 1 fila=equipo) para la Capacidad de Banda a Subir",
+							"type": "array",
+							"minItems": 1,
+							"items": [
+								{
+									"description": "Hay 3 o 4 columnas, las 2 primeras identifican el equipo, y la tercera columna identifica qué capacidad de respaldo debe tener ese equipo. La 4ª columna solo se usa en caso de que el equipo que respalda sea de tipo Almacenamiento.",
+									"type": "array",
+									"minItems": 3,
+									"maxItems": 5,
+									"items": [
+										{
+											"description": "string que indica el tipo de elemento que puede respaldar la banda a subir en caso de que se reclamase",
+											"type": "string",
+											"enum": [
+												"G",
+												"C",
+												"A",
+												"R"
+											]
+										},
+										{
+											"description": "entero, empezando en 0, que indica a qué unidad del tipo de elemento pertenece el equipo(activo que respaldaría la banda a subir",
+											"type": "integer",
+											"minimum": 0
+										},
+										{
+											"description": "Ratio que define cuántos [MW] de potencia tienen que estar disponible en el respaldo por cada [MW] de capacidad de banda a subir. Debería ser igual a los rendimientos entre la Red y el Respaldo.",
+											"type": "number",
+											"minimum": 0
+										},
+										{
+											"description": "Tiempo [h] de nivel de Almacenamiento que debe haber de margen por cada 1hora de capacidad de banda a subir. Solo se define si el respaldo es de tipo Almacenamiento",
+											"type": "number",
+											"minimum": 1
+										},
+										{
+											"description": "Opcional: Potencia de banda [MW] que este respaldo puede cubrir como máximo. Si no se define, presupone que un respaldo puede soportar toda la potencia definida en \"PotMaxS\"; pero si se define, se puede limitar cuánto de la banda puede soportar cada respaldo",
+											"type": "number",
+											"minimum": 1
+										}
+									],
+									"additionalItems": false
+								}
+							]
+						},
+						"RespaldoB": {
+							"description": "Matriz 2D con tantas filas como equipos/activos de respaldo haya (al menos 1 fila=equipo) para la Capacidad de Banda a Bajar",
+							"type": "array",
+							"minItems": 1,
+							"items": [
+								{
+									"description": "Hay 3 columnas, las 2 primeras identifican el equipo, y la tercera columna identifica qué capacidad de respaldo debe tener ese equipo",
+									"type": "array",
+									"minItems": 3,
+									"maxItems": 5,
+									"items": [
+										{
+											"description": "string que indica el tipo de elemento que puede respaldar la banda a bajar en caso de que se reclamase",
+											"type": "string",
+											"enum": [
+												"G",
+												"C",
+												"A",
+												"R"
+											]
+										},
+										{
+											"description": "entero, empezando en 0, que indica a qué unidad del tipo de elemento pertenece el equipo(activo que respaldaría la banda a bajar",
+											"type": "integer",
+											"minimum": 0
+										},
+										{
+											"description": "Ratio que define cuántos [MW] de potencia tienen que estar disponible en el respaldo por cada [MW] de capacidad de banda a bajar. Debería ser igual a los rendimientos entre la Red y el Respaldo.",
+											"type": "number",
+											"minimum": 0
+										},
+										{
+											"description": "Tiempo [h] de nivel de Almacenamiento que debe haber de margen por cada 1hora de capacidad de banda a subir. Solo se define si el respaldo es de tipo Almacenamiento",
+											"type": "number",
+											"minimum": 1
+										},
+										{
+											"description": "Opcional: Potencia de banda [MW] que este respaldo puede cubrir como máximo. Si no se define, presupone que un respaldo puede soportar toda la potencia definida en \"PotMaxB\"; pero si se define, se puede limitar cuánto de la banda puede soportar cada respaldo",
+											"type": "number",
+											"minimum": 1
+										}
+									],
+									"additionalItems": false
+								}
+							]
+						}
+					},
+					"required": ["PotMaxS", "PotMaxB", "CbS", "CbB", "RespaldoS", "RespaldoB"],
+					"additionalItems": false
+				},
+				"ImportExtra": {
+					"description": "Objeto que define qué costes se generan por importar más Potencia de la contratada, es decir por superar \"PmaxI\" (opcional, default No se puede superar \"PmaxI\")",
+					"type": "object",
+					"properties": {
+						"dtIni": {
+							"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+							"type": "string",
+							"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+						},
+						"IncrT": {
+							"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+							"type": "number",
+							"minimum": 1
+						},
+						"vTarifas": {
+							"description": "Vector que define qué tarifa, empezando en 1 respecto de las definidas en \"Ctarifas\", se aplica en cada instante de tiempo",
+							"type": "array",
+							"minItems": 2,
+							"items": {
+								"type": "number"
+							}
+						},
+						"Ctarifas": {
+							"description": "Matriz 3D que define los extra-costes [EUR] que se aplican por importar más potencia de la contratada en la Red, para las diferentes tarifas que aplican según define \"vTarifas\"",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada elemento corresponde a una tarifa, y es una Matriz 2D que define rangos de potencia y el coste que implica recurrir a estas potencias extra",
+								"type": "array",
+								"minItems": 1,
+								"items": {
+									"description": "Tantas filas como rangos de potencia se desee. 3 columnas: potencia desde, potencia hasta, y coste adicional [EUR] que estar importando en dicho rango de potencia implica",
+									"type": "array",
+									"minItems": 3,
+									"maxItems": 3,
+									"items": {
+										"type": "number"
+									}
+								}
+							}
+						}
+					},
+					"required": ["Ctarifas"],
+					"additionalItems": false
+				}
+			},
+			"required": [
+				"Costes"
+			],
+			"additionalItems": false
+		}
+	},
+	"L": {
+		"description": "Vector que define cada Link (unidireccional) de conexión entre Buses",
+		"type": "array",
+		"minItems": 1,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Link (opcional)",
+					"type": "string"
+				},
+				"busInput": {
+					"description": "Nombre del Bus del que recibe input (del que extrae flujo)",
+					"type": "string"
+				},
+				"busOutput": {
+					"description": "Nombre del Bus al que mete el output (en el que inyecta flujo)",
+					"type": "string"
+				},
+				"T": {
+					"description": "Factor de transformación FlujoOutput/FlujoInput. Puede ser un valor único, o una matriz de filas=puntosCurva, 1ªcol=Factor T, 2ºcol=PotInput a la que aplica/corresponde ese FactorT",
+					"oneOf": [
+						{
+							"type": "number"
+						},
+						{
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"type": "array",
+								"minItems": 2,
+								"maxItems": 2,
+								"items": {
+									"type": "number"
+								}
+							}
+						}
+					]
+				},
+				"PminI": {
+					"description": "Potencia [MW] Input Mínima admisible (opcional, default: 0)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será la misma en todos los instantes de tiempo",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Diccionario que permite definir una potencia límite variable en función del tiempo",
+							"type": "object",
+							"properties": {
+								"dtIni": {
+									"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+									"type": "string",
+									"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+								},
+								"IncrT": {
+									"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+									"type": "number",
+									"minimum": 1
+								},
+								"Pot": {
+									"description": "Vector de Potencia [MW] límite a aplicar en cada instante de tiempo",
+									"type": "array",
+									"minItems": 2,
+									"items": {
+										"type": "number",
+										"minimum": 0
+									}
+								}
+							},
+							"required": ["Pot"],
+							"additionalItems": false
+						}
+					]
+				},
+				"PmaxI": {
+					"description": "Potencia [MW] Input Máxima admisible (opcional, default: sin límites)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será la misma en todos los instantes de tiempo",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Diccionario que permite definir una potencia límite variable en función del tiempo",
+							"type": "object",
+							"properties": {
+								"dtIni": {
+									"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+									"type": "string",
+									"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+								},
+								"IncrT": {
+									"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+									"type": "number",
+									"minimum": 1
+								},
+								"Pot": {
+									"description": "Vector de Potencia [MW] límite a aplicar en cada instante de tiempo",
+									"type": "array",
+									"minItems": 2,
+									"items": {
+										"type": "number",
+										"minimum": 0
+									}
+								}
+							},
+							"required": ["Pot"],
+							"additionalItems": false
+						}
+					]
+				},
+				"RsI": {
+					"description": "Rampa de Subida de Potencia Input [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RbI": {
+					"description": "Rampa de Bajada de Potencia Input [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PminO": {
+					"description": "Potencia [MW] Output Mínima admisible (opcional, default: 0)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será la misma en todos los instantes de tiempo",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Diccionario que permite definir una potencia límite variable en función del tiempo",
+							"type": "object",
+							"properties": {
+								"dtIni": {
+									"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+									"type": "string",
+									"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+								},
+								"IncrT": {
+									"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+									"type": "number",
+									"minimum": 1
+								},
+								"Pot": {
+									"description": "Vector de Potencia [MW] límite a aplicar en cada instante de tiempo",
+									"type": "array",
+									"minItems": 2,
+									"items": {
+										"type": "number",
+										"minimum": 0
+									}
+								}
+							},
+							"required": ["Pot"],
+							"additionalItems": false
+						}
+					]
+				},
+				"PmaxO": {
+					"description": "Potencia [MW] Output Máxima admisible (opcional, default: sin límites)",
+					"anyof": [
+						{
+							"description": "Si se especifica un único valor, esta potencia límite será la misma en todos los instantes de tiempo",
+							"type": "number",
+							"minimum": 0
+						},
+						{
+							"description": "Diccionario que permite definir una potencia límite variable en función del tiempo",
+							"type": "object",
+							"properties": {
+								"dtIni": {
+									"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339 (opcional, default: según definido en ['time']['dtIni'])",
+									"type": "string",
+									"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+								},
+								"IncrT": {
+									"description": "Incremento de Tiempo [min] entre instantes definidos (opcional, default: según definido en ['time']['IncrT'])",
+									"type": "number",
+									"minimum": 1
+								},
+								"Pot": {
+									"description": "Vector de Potencia [MW] límite a aplicar en cada instante de tiempo",
+									"type": "array",
+									"minItems": 2,
+									"items": {
+										"type": "number",
+										"minimum": 0
+									}
+								}
+							},
+							"required": ["Pot"],
+							"additionalItems": false
+						}
+					]
+				},
+				"RsO": {
+					"description": "Rampa de Subida de Potencia Output [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"RbO": {
+					"description": "Rampa de Bajada de Potencia Output [MW/h] admisible (opcional, default: sin límites)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Tpreca": {
+					"description": "Tiempo [min] de precalentamiento requerido antes de poder arrancar (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"EinPreca": {
+					"description": "Energía [MWh] de Input consumida, la cual es requerida para precalentar (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"EoutPreca": {
+					"description": "Energía [MWh] de Output consumida, la cual es requerida para precalentar (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Ca": {
+					"description": "Coste de Iniciar la operación [EUR/arranque] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Cf": {
+					"description": "Coste Fijo [EUR/hora] por tenerlo en Operación (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CvI": {
+					"description": "Coste en función de la Energía Input [EUR/MWh] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CvO": {
+					"description": "Coste en función de la Energía Output [EUR/MWh] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CFp": {
+					"description": "Coste Fijo [EUR/hora] por tenerlo en Precalentamiento (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"Tinercia": {
+					"description": "Tiempo [min] de desfase/inercia entre el input y el output (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"PiniI": {
+					"description": "Condición Inicial: Potencia [MW] que está fluyendo en el Input del Link un instante de tiempo antes de la simulación (opcional, default: 0)",
+					"type": "number"
+				}
+			},
+			"anyOf": [
+				{
+					"required": ["T", "busInput"]
+				},
+				{
+					"required": ["T", "busOutput"]
+				}
+			],
+			"additionalItems": false
+		}
+	},
+	"D": {
+		"description": "Vector que define cada Mezclador de múltiples conexión entre Buses",
+		"type": "array",
+		"minItems": 1,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Mezclador (opcional)",
+					"type": "string"
+				},
+				"busesInput": {
+					"description": "Vector con los nombres de los buses input (de los que extrae flujo). Debe tener al menos 1 bus input.",
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "string"
+					}
+				},
+				"busesOutput": {
+					"description": "Vector con los nombres de los buses output (en los que inyecta flujo). Debe tener al menos 1 bus output.",
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "string"
+					}
+				},
+				"Modos": {
+					"description": "Estructura que define los diferentes Modos de Operación entre los que puede operar el Mezclador. Solo podrá estar en un modo en cada instante de tiempo, o estar apagado",
+					"type": "object",
+					"properties": {
+						"Proporciones": {
+							"description": "Matriz 2D que define, para cada Modo de Operación (Filas), qué proporción deben respetar los flujos circulantes en los diferentes buses input y outoput. En columnas se tienen los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada fila es un modo de operación posible. Tantas columnas como buses input+output haya",
+								"type": "array",
+								"minItems": 3,
+								"items": {
+									"description": "Cada valor es unidimensional, no tiene unidades ni significado físico, estos valores se usa para extraer proporciones entre buses. Estos valores no pueden ser negativos, pero sí cero si en ese modo no se consume/genera flujo en ese bus.",
+									"type": "number",
+									"minimum": 0
+								}
+							}
+						},
+						"Pmin": {
+							"description": "Matriz 2D que define, para cada Modo de Operación (filas), qué Potencia Mínima de operación debe respetarse en uno de los buses concretos (las potencias mínimas del resto de buses se deducen por proporciones). Opcional, default: no hay Pmin en ningún modo",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada fila es un modo de operación posible. 2 columnas: la primera define el índice del bus de referencia, la segunda la potencia límite que aplica a dicho bus.",
+								"type": "array",
+								"minItems": 2,
+								"maxItems": 2,
+								"items": [
+									{
+										"description": "Índice, empezando en 1, del bus que se toma de referencia para definir la potencia límite. Los buses se numeran primero los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+										"type": "integer",
+										"minimum": 1
+									},
+									{
+										"description": "Potencia [MW] Mínima admisible en el bus de referencia.",
+										"type": "number",
+										"minimum": 0
+									}
+								]
+							}
+						},
+						"Pmax": {
+							"description": "Matriz 2D que define, para cada Modo de Operación (filas), qué Potencia Máxima de operación debe respetarse en uno de los buses concretos (las potencias máximas del resto de buses se deducen por proporciones). Opcional, default: no hay Pmax en ningún modo",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada fila es un modo de operación posible. 2 columnas: la primera define el índice del bus de referencia, la segunda la potencia límite que aplica a dicho bus.",
+								"type": "array",
+								"minItems": 2,
+								"maxItems": 2,
+								"items": [
+									{
+										"description": "Índice, empezando en 1, del bus que se toma de referencia para definir la potencia límite. Los buses se numeran primero los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+										"type": "integer",
+										"minimum": 1
+									},
+									{
+										"description": "Potencia [MW] Máxima admisible en el bus de referencia.",
+										"type": "number",
+										"minimum": 0
+									}
+								]
+							}
+						},
+						"Rs": {
+							"description": "Matriz 2D que define, para cada Modo de Operación (filas), qué Rampa de Subida máxima debe respetarse en uno de los buses concretos (las rampas del resto de buses se deducen por proporciones). Opcional, default: no hay Rampa de Subida límite en ningún modo",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada fila es un modo de operación posible. 2 columnas: la primera define el índice del bus de referencia, la segunda la rampa límite que aplica a dicho bus.",
+								"type": "array",
+								"minItems": 2,
+								"maxItems": 2,
+								"items": [
+									{
+										"description": "Índice, empezando en 1, del bus que se toma de referencia para definir la rampa límite. Los buses se numeran primero los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+										"type": "integer",
+										"minimum": 1
+									},
+									{
+										"description": "Rampa de Subida de Potencia [MW/h] admisible",
+										"type": "number",
+										"minimum": 0
+									}
+								]
+							}
+						},
+						"Rb": {
+							"description": "Matriz 2D que define, para cada Modo de Operación (filas), qué Rampa de Bajada máxima debe respetarse en uno de los buses concretos (las rampas del resto de buses se deducen por proporciones). Opcional, default: no hay Rampa de Bajada límite en ningún modo",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada fila es un modo de operación posible. 2 columnas: la primera define el índice del bus de referencia, la segunda la rampa límite que aplica a dicho bus.",
+								"type": "array",
+								"minItems": 2,
+								"maxItems": 2,
+								"items": [
+									{
+										"description": "Índice, empezando en 1, del bus que se toma de referencia para definir la rampa límite. Los buses se numeran primero los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+										"type": "integer",
+										"minimum": 1
+									},
+									{
+										"description": "Rampa de Bajada de Potencia [MW/h] admisible",
+										"type": "number",
+										"minimum": 0
+									}
+								]
+							}
+						},
+						"Cf": {
+							"description": "Vector 1D que define, para cada Modo de Operación, el Coste Fijo que supone estar operando en dicho modo. Opcional, default: coste 0 en todos los modos",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Coste Fijo [EUR/hora] por tenerlo en este Modo de Operación",
+								"type": "number",
+								"minimum": 0
+							}
+						},
+						"Cv": {
+							"description": "Matriz 2D que define, para cada Modo de Operación (filas), el coste por unidad de energía circulada que se aplica en dicho modo. Opcional, default: coste 0 en todos los modos",
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"description": "Cada fila es un modo de operación posible. 2 columnas: la primera define el índice del bus de referencia, la segunda el coste por unidad de energía circulada en dicho bus.",
+								"type": "array",
+								"minItems": 2,
+								"maxItems": 2,
+								"items": [
+									{
+										"description": "Índice, empezando en 1, del bus que se toma de referencia para definir este coste variable. Los buses se numeran primero los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+										"type": "integer",
+										"minimum": 1
+									},
+									{
+										"description": "Coste en función de la Energía [EUR/MWh] circulada por el bus de referencia en este Modo de Operación",
+										"type": "number",
+										"minimum": 0
+									}
+								]
+							}
+						}
+					},
+					"required": [
+						"Proporciones"
+					],
+					"additionalProperties": false
+				},
+				"Ca": {
+					"description": "Coste de Iniciar la operación [EUR/arranque] (opcional, default: 0)",
+					"type": "number",
+					"minimum": 0
+				},
+				"CondIni": {
+					"description": "Estructura que define las condiciones iniciales en las que está operando el Mezclador antes de iniciar el análisis/simulación. Opcional, defualt: apagado sin flujo circulando",
+					"type": "object",
+					"properties": {
+						"ModoIni": {
+							"description": "Índice del Modo, empezando a contar en 1, en el que se está operando. Si está apagado se definiría ModoIni=0. Opcional: default modo 0 apagado"
+						},
+						"Pini": {
+							"description": "Vector 1D con la potencia que circula por cada bus del mezclador. Los buses se numeran primero los buses input, seguidos de los buses output, en el mismo orden en que se definieron en \"busesInput\" y \"busesOutput\"",
+							"type": "array",
+							"minItems": 3,
+							"items": {
+								"description": "Cada valor es la Potencia [MW] que está fluyendo por cada uno de los buses un instante antes de iniciar la simulación//análisis",
+								"type": "number",
+								"minimum": 0
+							}
+						}
+					},
+					"required": [
+						"ModoIni",
+						"Pini"
+					],
+					"additionalProperties": false
+				}
+			},
+			"required": [
+				"busesInput",
+				"busesOutput",
+				"Modos"
+			],
+			"additionalItems": false
+		}
+	},
+	"Time": {
+		"description": "Diccionario que define los datos Temporales con los que se hará la simulación de Operación",
+		"type": "object",
+		"properties": {
+			"N": {
+				"description": "Número de Instantes de Tiempo Simulados",
+				"type": "integer",
+				"minimum": 2
+			},
+			"dtIni": {
+				"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339",
+				"type": "string",
+				"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+			},
+			"IncrT": {
+				"description": "Incremento de Tiempo [min] entre instantes simulados",
+				"type": "number",
+				"minimum": 1
+			}
+		},
+		"required": [
+			"N", "dtIni", "IncrT"
+		],
+		"additionalProperties": false
+	},
+	"Core": {
+		"description": "Diccionario que define parámetros que controlan cómo se ejecuta el núcleo",
+		"type": "object",
+		"properties": {
+			"Solver_Tmax": {
+				"description": "Tiempo [s] máximo que tendrá el solver para resolver, corta en este tiempo aunque no encuentre óptimo global. Opcional: default 60s",
+				"type": "integer",
+				"minimum": 10
+			},
+			"Solver_GapMin": {
+				"description": "Gap [tanto por uno] por debajo del cual se corta la resolución del solver, aunque no sea estrictamente el óptimo global. Opcional: default 0 (no para hasta óptimo global o Tmax, lo que ocurra primero)",
+				"type": "number",
+				"minimum": 0
+			},
+			"Solver_AbsGapMin": {
+				"description": "Gap absoluto [EUR] por debajo del cual se corta la resolución del solver, aunque no sea estrictamente el óptimo global. Opcional: default 0 (no para hasta óptimo global o Tmax, lo que ocurra primero)",
+				"type": "number",
+				"minimum": 0
+			},
+			"Solver_FeasTol": {
+				"description": "Tolerancia para el chequeo de restricciones, es un parámetro interno del solver. Opcional: default 1E-6",
+				"type": "number",
+				"maximum": 0.1
+			},
+			"Solver_hideOutput": {
+				"description": "Indica si mostrar (=True) o no (=False) los prints del solver mientras se resuelve. Por defecto, los muestra",
+				"type": "boolean"
+			}
+		}
+	}
+},
+"anyOf": [
+	{
+		"required": ["G", "C", "Time"]
+	},
+	{
+		"required": ["G", "R", "Time"]
+	},
+	{
+		"required": ["C", "R", "Time"]
+	},
+	{
+		"required": ["G", "A", "R", "Time"]
+	},
+	{
+		"required": ["C", "A", "R", "Time"]
+	},
+	{
+		"required": ["A", "R", "Time"]
+	}
+],
+"additionalProperties": false
+}

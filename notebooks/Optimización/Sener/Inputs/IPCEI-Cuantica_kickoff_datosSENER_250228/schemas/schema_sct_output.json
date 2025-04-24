@@ -1,0 +1,833 @@
+{
+"$schema": "http://json-schema.org/draft-07/schema#",
+"title": "EMS - Sistema Control Terciario, Resultados de Salida",
+"description": "json de resultados obtenidos tras ejecutar el EMS-SCT",
+"type": "object",
+"properties": {
+	"G": {
+		"description": "Vector que contiene los resultados de cada Generador existente",
+		"type": "array",
+		"minItems": 0,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Generador (opcional, solo si se definió en datos)",
+					"type": "string"
+				},
+				"x": {
+					"description": "Vector de Potencia [MW] Demandada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"y": {
+					"description": "Vector de booleanos que indican si el Generador está produciendo (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"z": {
+					"description": "Vector de booleanos que indican si el Generador se arrancó (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"cA": {
+					"description": "Vector de Costes [EUR] de Arranque en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cF": {
+					"description": "Vector de Costes [EUR] Fijos por estar en Producción en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cV": {
+					"description": "Vector de Costes [EUR] Variables en función de la producción en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cTot": {
+					"description": "Vector de Costes [EUR] Totales en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				}
+			},
+			"required": [
+				"x",
+				"y",
+				"z",
+				"cA",
+				"cF",
+				"cV",
+				"cTot"
+			]
+		}
+	},
+	"C": {
+		"description": "Vector que contiene los resultados de cada Consumidor existente",
+		"type": "array",
+		"minItems": 0,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Consumidor (opcional, solo si se definió en datos)",
+					"type": "string"
+				},
+				"x": {
+					"description": "Vector de Potencia [MW] Recibida en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"d": {
+					"description": "Vector de Potencia [MW] Recibida de menos (Déficit) respecto de la Solicitada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"e": {
+					"description": "Vector de Potencia [MW] Recibida de más (Exceso) respecto de la Solicitada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"y": {
+					"description": "Vector de booleanos que indican si el Consumidor está consumiendo (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"cD": {
+					"description": "Vector de Costes [EUR] generados por el Déficit de potencia suministrada respecto a solicitada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cE": {
+					"description": "Vector de Costes [EUR] generados por el Exceso de potencia suministrada respecto a solicitada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cTot": {
+					"description": "Vector de Costes [EUR] Totales por desvíos en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"Ereal": {
+					"description": "Energía Total [MWh] suministrada al Consumidor durante todos los instantes de tiempo",
+					"type": "number",
+					"minimum": 0
+				},
+				"REreal": {
+					"description": "Ratio [-] entre la Energía Total suministrada / demandada",
+					"type": "number",
+					"minimum": 0
+				}
+			},
+			"required": [
+				"x",
+				"d",
+				"e",
+				"y",
+				"cD",
+				"cE",
+				"cTot",
+				"Ereal",
+				"REreal"
+			]
+		}
+	},
+	"A": {
+		"description": "Vector que contiene los resultados de cada Almacenamiento existente",
+		"type": "array",
+		"minItems": 0,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Almacenamiento (opcional, solo si se definió en datos)",
+					"type": "string"
+				},
+				"xC": {
+					"description": "Vector de Potencia [MW] Cargada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xD": {
+					"description": "Vector de Potencia [MW] Descargada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"C": {
+					"description": "Vector de Energía [MWh] que hay en el Almacenamiento al final de cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"yC": {
+					"description": "Vector de booleanos que indican si el Almacenamiento está Cargando (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"zC": {
+					"description": "Vector de booleanos que indican si el Generador inició Carga (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"yD": {
+					"description": "Vector de booleanos que indican si el Almacenamiento está Descargando (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"zD": {
+					"description": "Vector de booleanos que indican si el Generador inició Descarga (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"cAC": {
+					"description": "Vector de Costes [EUR] por arrancar/iniciar Carga en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cFC": {
+					"description": "Vector de Costes [EUR] Fijos por estar en Carga en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cVC": {
+					"description": "Vector de Costes [EUR] Variables en función de la potencia Cargada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cAD": {
+					"description": "Vector de Costes [EUR] por arrancar/iniciar Descarga en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cFD": {
+					"description": "Vector de Costes [EUR] Fijos por estar en Descarga en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cVD": {
+					"description": "Vector de Costes [EUR] Variables en función de la potencia Descarga en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cNm": {
+					"description": "Vector de Costes/valor [EUR] por mantener un determinado Nivel almacenado en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cNfinal": {
+					"description": "Vector de Costes/valor [EUR] del Nivel FINAL remanente en el almacenamiento",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cTot": {
+					"description": "Vector de Costes [EUR] Totales en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				}
+			},
+			"required": [
+				"xC",
+				"xD",
+				"C",
+				"yC",
+				"zC",
+				"yD",
+				"zD",
+				"cAC",
+				"cFC",
+				"cVC",
+				"cAD",
+				"cFD",
+				"cVD",
+				"cTot"
+			]
+		}
+	},
+	"R": {
+		"description": "Vector que contiene los resultados de cada conexión a Red existente",
+		"type": "array",
+		"minItems": 0,
+		"items": {
+			"type": "object",
+			"properties": {
+				"xE": {
+					"description": "Vector de Potencia [MW] Exportada hacia la Red en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xI": {
+					"description": "Vector de Potencia [MW] Importada desde la Red en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"dE": {
+					"description": "Vector de Potencia [MW] Exportada de menos (Déficit) respecto de la Comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"eE": {
+					"description": "Vector de Potencia [MW] Exportada de más (Exceso) respecto de la Comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"dI": {
+					"description": "Vector de Potencia [MW] Importada de menos (Déficit) respecto de la Comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"eI": {
+					"description": "Vector de Potencia [MW] Importada de más (Exceso) respecto de la Comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"yE": {
+					"description": "Vector de booleanos que indican si se está Exportando hacia la Red (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"yI": {
+					"description": "Vector de booleanos que indican si se está Importando desde la Red (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"xIextraAvail": {
+					"description": "Vector de Potencia [MW] Importación extra, por encima de la PmaxI/contratada, a la que se ha recurrido en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xIextraUsed": {
+					"description": "Vector de Potencia [MW] Importación extra, por encima de la PmaxI/contratada, que se ha consumido en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xBsubir": {
+					"description": "Vector de Potencia [MW] de Banda a Subir ofertada y adjudicada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xBbajar": {
+					"description": "Vector de Potencia [MW] de Banda a Bajar ofertada y adjudicada en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cDE": {
+					"description": "Vector de Costes [EUR] generados por el Déficit de potencia Exportada respecto de la comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cEE": {
+					"description": "Vector de Costes [EUR] generados por el Exceso de potencia Exportada respecto de la comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cDI": {
+					"description": "Vector de Costes [EUR] generados por el Déficit de potencia Importada respecto de la comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cEI": {
+					"description": "Vector de Costes [EUR] generados por el Exceso de potencia Importada respecto de la comprometida, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cIextra": {
+					"description": "Vector de Costes [EUR] generados por importar una potencia mayor a la contratada (PmaxI), en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cTot": {
+					"description": "Vector de Costes [EUR] Totales por desvíos respecto a compormisos, en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				}
+			},
+			"required": [
+				"xE",
+				"xI",
+				"dE",
+				"eE",
+				"dI",
+				"eI",
+				"yE",
+				"yI",
+				"xIextraAvail",
+				"xIextraUsed",
+				"xBsubir",
+				"xBbajar",
+				"cDE",
+				"cEE",
+				"cDI",
+				"cEI",
+				"cTot"
+			]
+		}
+	},
+	"L": {
+		"description": "Vector que contiene los resultados de cada Link existente",
+		"type": "array",
+		"minItems": 0,
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Nombre del Link (opcional, solo si se definió en datos)",
+					"type": "string"
+				},
+				"xI": {
+					"description": "Vector de Potencia [MW] Input al Link en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xO": {
+					"description": "Vector de Potencia [MW] Output del Link en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"y": {
+					"description": "Vector de booleanos que indican si el Link está operando (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"z": {
+					"description": "Vector de booleanos que indican si el Link se arrancó (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"p": {
+					"description": "Vector de booleanos que indican si el Link está precalentando (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"xPI": {
+					"description": "Vector de Potencia [MW] Input del Link consumida para Precalentar en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xPO": {
+					"description": "Vector de Potencia [MW] Output del Link consumida para Precalentar en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cA": {
+					"description": "Vector de Costes [EUR] de Arranque en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cF": {
+					"description": "Vector de Costes [EUR] Fijos por estar en Operación en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cVI": {
+					"description": "Vector de Costes [EUR] Variables en función de la potencia Input en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cVO": {
+					"description": "Vector de Costes [EUR] Variables en función de la potencia Output en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cFp": {
+					"description": "Vector de Costes [EUR] Fijos por estar en Precalentamiento en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"cTot": {
+					"description": "Vector de Costes [EUR] Totales en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"xO_noTiner": {
+					"description": "Vector de Potencia [MW] Output del Link en cada instante de tiempo, similar a \"xO\" pero sin aplicar Tiempo de Inercia (adelantado respecto a \"xO\"). Es opcional, solo se retorna en links con Tinercia>0",
+					"type": "array",
+                    "minItems": 2,
+                    "items": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+				}
+			},
+			"required": [
+				"xI",
+				"xO",
+				"y",
+				"z",
+				"p",
+				"xPI",
+				"xPO",
+				"cA",
+				"cF",
+				"cVI",
+				"cVO",
+				"cTot"
+			]
+		}
+	},
+	"D": {
+		"description": "Vector que contiene los resultados de cada Mezclador existente",
+		"type": "array",
+		"minItems": 0,
+		"items": {
+			"type": "object",
+			"patternProperties": {
+				"^xI[1-9]$": {
+					"description": "Vector de Potencia [MW] que se transmite por cada Bus Input del Mezclador en cada instante de tiempo. Los buses Input se numeran empezando en 0",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				},
+				"^xO[1-9]$": {
+					"description": "Vector de Potencia [MW] que se transmite por cada Bus Output del Mezclador en cada instante de tiempo. Los buses Output se numeran empezando en 0",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number",
+						"minimum": 0
+					}
+				}
+			},
+			"properties": {
+				"name": {
+					"description": "Nombre del Mezclador (opcional, solo si se definió en datos)",
+					"type": "string"
+				},
+				"modo": {
+					"description": "Vector que define en qué modo está operando el Mezclador en cada instante de tiempo. Modo=0 es apagado, a partir de 1 en adelante son los modos correspondientes a las filas de la matriz \"Porporciones\" introducida",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "integer",
+						"minimum": -1
+					}
+				},
+				"y": {
+					"description": "Vector de booleanos que indican si el Mezclador está operando (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"z": {
+					"description": "Vector de booleanos que indican si el Mezclador inició su operación (=True) en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "boolean"
+					}
+				},
+				"cA": {
+					"description": "Vector de Costes [EUR] por arrancar/iniciar el Mezclador en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cF": {
+					"description": "Vector de Costes [EUR] Fijos por estar en operación en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cV": {
+					"description": "Vector de Costes [EUR] Variables en función de la potencia transmitida por los buses de referencia en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				},
+				"cTot": {
+					"description": "Vector de Costes [EUR] Totales en cada instante de tiempo",
+					"type": "array",
+					"minItems": 2,
+					"items": {
+						"type": "number"
+					}
+				}
+			},
+			"required": [
+				"modo",
+				"y",
+				"z",
+				"cA",
+				"cF",
+				"cV",
+				"cTot"
+			]
+		}
+	},
+	"Time": {
+		"description": "Diccionario que define los datos Temporales con los que se ha hecho la simulación de Operación",
+		"type": "object",
+		"properties": {
+			"N": {
+				"description": "Número de Instantes de Tiempo Simulados",
+				"type": "integer",
+				"minimum": 2
+			},
+			"dtIni": {
+				"description": "Fecha y hora a la que corresponde el primer instante de tiempo, en formato RFC 3339",
+				"type": "string",
+				"pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+			},
+			"IncrT": {
+				"description": "Incremento de Tiempo [min] entre instantes simulados",
+				"type": "number",
+				"minimum": 1
+			}
+		},
+		"required": [
+			"N",
+			"dtIni",
+			"IncrT"
+		]
+	},
+	"Costs": {
+		"description": "Diccionario que define los principales costes",
+		"type": "object",
+		"properties": {
+			"Total": {
+				"description": "Coste Total de toda la Microred",
+				"type": "number"
+			}
+		},
+		"patternProperties": {
+			"^Bus#[0-9]{,2}[0-9]$": {
+				"description": "Coste asociado a la operación del Bus indicado",
+				"type": "number"
+			}
+		},
+    	"additionalProperties": false,
+		"required": [
+			"Total"
+		]
+	}
+},
+"required": [
+	"G", "C", "A", "R", "L", "D", "Time", "Costs"
+]
+}
