@@ -1,216 +1,27 @@
-import json
-import numpy as numpy
-import pandas as pd
-import matplotlib.pyplot as plt
-
-import result_utils
-import os
-
-# Leer el archivo JSON
-with open("./outputs/resultados_Q.json", "r") as archivo:
-    datos = json.load(archivo)
+import utils.result_utils as result_utils
+import utils.list_utils as list_utils
+import capa_visualizacion as visualizar
+import numpy as np
 
 
-def json_to_vector_entrada_resultados(json_data):
-    """
-    Convierte un diccionario JSON, generado por el script original,
-    de vuelta a la lista 'vector_entrada_resultados'.
+def crear_dict_json(resultados: list) -> dict:
+    json = {}
+    json["G"] = [resultados[0]]
+    json["C"] = [resultados[1]]
+    json["A"] = [resultados[2]]
+    json["R"] = [resultados[3]]
+    json["L"] = resultados[4]
+    json["D"] = []
+    json["Time"] = resultados[5]
+    json["Costs"] = resultados[6]
 
-    Args:
-        json_data (dict): El diccionario JSON cargado desde el archivo.
-
-    Returns:
-        list: Una lista conteniendo los datos extraídos del JSON en el
-              mismo formato que 'vector_entrada_resultados'.  Retorna None si
-              la estructura del json_data no es la esperada.
-    """
-
-    try:
-        # Extraer datos del JSON
-        G = json_data.get(
-            "G", [{}]
-        )[
-            0
-        ]  # Accede al primer elemento de la lista o usa un diccionario vacío por defecto
-        A = json_data.get("A", [{}])[0]
-        R = json_data.get("R", [{}])[0]
-        L = json_data.get("L", [])  # L puede ser una lista de diccionarios
-        # Time = json_data.get("Time", {})  # time no lo uso
-
-        # Extraer input_curves de L
-        input_curves = {}
-        precalentando = {}
-        E_prec = 0.30281338645129247  # Escalar a añadir
-
-        for i, link_data in enumerate(L):
-            link_number = i + 1  # Asumiendo que los links se numeran desde 1
-
-            # Divide la potencia de entrada (xI) entre 6 para volver a MWh
-            xI = [
-                x if isinstance(x, (int, float)) else 0 for x in link_data.get("xI", [])
-            ]
-
-            # Añadir escalar a los 7 elementos anteriores al primer valor positivo
-            try:
-                first_pos_index = next(j for j, val in enumerate(xI) if val > 0)
-                for j in range(max(0, first_pos_index - 7), first_pos_index):
-                    xI[j] = E_prec
-            except StopIteration:
-                pass  # No hay valores positivos, no hacer nada
-
-            input_curves[link_number] = xI
-            precalentando[link_number] = link_data.get("p", [])
-
-        # Extraer G_result del campo "x" de G y dividir cada elemento por 6
-        G_result = [x / 6 for x in G.get("x", [])]  # bien
-
-        # Extraer R_result del campo "xI" de R y dividir cada elemento por 6
-        RI = [x / 6 if isinstance(x, (int, float)) else 0 for x in R.get("xI", [])]
-        RE = [x / 6 if isinstance(x, (int, float)) else 0 for x in R.get("xE", [])]
-
-        RI_array = numpy.array(RI)
-        RE_array = numpy.array(RE)
-
-        R_result = (RI_array + RE_array).tolist()  # bien
-
-        # Extraer Q_result del campo "C" de A
-        Q_result = A.get("C", [])  # bien
-
-        # Extraer A_result (calcular a partir de C del almacenamiento)
-        # La lógica original parece calcularlo como la diferencia entre Q[t+1] y Q[t]
-        Q_result_np = numpy.array(Q_result)
-        A_result = numpy.diff(Q_result_np).tolist()
-        A_result = [-x for x in A_result]  # Invertir el signo de A_result
-        A_result = [
-            0.0
-        ] + A_result  # Agregar un 0 al inicio para mantener la longitud #bien
-
-        # Reordenar los datos en la estructura vector_entrada_resultados
-        vector_entrada_resultados = [
-            input_curves,
-            precalentando,
-            G_result,
-            R_result,
-            Q_result,
-            A_result,
-        ]
-
-        return vector_entrada_resultados
-    except (KeyError, TypeError, IndexError) as e:
-        print(f"Error al procesar el JSON: {e}")
-        print(e)
-        return None
+    return json
 
 
-def visualizar_vector_entrada_resultados(vector_entrada_resultados):
-    """
-    Presenta el vector_entrada_resultados de una manera más organizada y legible,
-    utilizando pandas DataFrames para las series temporales y formateando la salida.
-
-    Args:
-        vector_entrada_resultados (list): La lista conteniendo los datos a visualizar.
-    """
-
-    if not vector_entrada_resultados or len(vector_entrada_resultados) != 6:
-        print("Error: vector_entrada_resultados inválido o incompleto.")
-        return
-
-    input_curves, precalentando, G_result, R_result, Q_result, A_result = (
-        vector_entrada_resultados
-    )
-
-    # Visualización de input_curves (Curvas de Consumo de Electricidad por Link)
-    print("\n--- Curvas de Consumo de Electricidad por Link (input_curves) ---")
-    df_input_curves = pd.DataFrame(input_curves)
-    print(df_input_curves.to_string())  # Imprime el DataFrame completo
-
-    # Visualización de precalentando (Estado de Precalentamiento por Link)
-    print("\n--- Estado de Precalentamiento por Link (precalentando) ---")
-    df_precalentando = pd.DataFrame(precalentando)
-    print(df_precalentando.to_string())
-
-    # Visualización de G_result (Energía del Generador)
-    print("\n--- Energía del Generador (G_result) ---")
-    df_G_result = pd.DataFrame({"G_result": G_result})
-    print(df_G_result.to_string())
-
-    # Visualización de R_result (Conexión a Red)
-    print("\n--- Conexión a Red (R_result) ---")
-    df_R_result = pd.DataFrame({"R_result": R_result})
-    print(df_R_result.to_string())
-
-    # Visualización de Q_result (Nivel de Carga de la Batería)
-    print("\n--- Nivel de Carga de la Batería (Q_result) ---")
-    df_Q_result = pd.DataFrame({"Q_result": Q_result})
-    print(df_Q_result.to_string())
-
-    # Visualización de A_result (Energía Obtenida de la Batería)
-    print("\n--- Energía Obtenida de la Batería (A_result) ---")
-    df_A_result = pd.DataFrame({"A_result": A_result})
-    print(df_A_result.to_string())
-
-
-with open(
-    "./Inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/resultados.json",
-    "r",
-    encoding="utf-8",
-) as f:
-    data = json.load(f)
-
-vector_resultados_C = json_to_vector_entrada_resultados(data)
-
-if vector_resultados_C:
-    print("vector_entrada_resultados recuperado con éxito:")
-    visualizar_vector_entrada_resultados(vector_resultados_C)
-else:
-    print("No se pudo recuperar vector_entrada_resultados.")
-
-
-try:
-    with open(
-        "./outputs/resultados_Q.json",
-        "r",
-        encoding="utf-8",
-    ) as f:
-        data = json.load(f)
-
-    vector_resultados_Q = json_to_vector_entrada_resultados(data)
-
-    if vector_resultados_Q:
-        print("vector_entrada_resultados recuperado con éxito:")
-        visualizar_vector_entrada_resultados(vector_resultados_Q)
-    else:
-        print("No se pudo recuperar vector_entrada_resultados.")
-
-except FileNotFoundError:
-    print("Error: El archivo 'resultados_Q.json' no se encontró.")
-except json.JSONDecodeError:
-    print("Error: El archivo 'resultados_Q.json' contiene JSON inválido.")
-except Exception as e:
-    print(f"Ocurrió un error inesperado: {e}")
-
-
-##TODO: Crear funcion para generar el json de salida a partir del vector con los resultados.
-##TODO: Mirar lo de introducir un 0 en la primera posicion de A_result
-
-
-def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.json"):
-    # Leer el archivo JSON
-    with open(
-        "inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/datos.json", "r"
-    ) as archivo:
-        datos = json.load(archivo)
-
+def G_json(G_result: list, datos) -> dict:
     datos_G = datos["G"][0]
-    datos_C = datos["C"][0]
-    datos_A = datos["A"][0]
-    datos_R = datos["R"][0]
 
     ## G: Vector que contiene los resultados de cada Generador existente.
-
-    G_result = vector_entrada[
-        2
-    ]  # G_result = energía obtenida (MWh) del generador G (en este caso, energía solar). Para pasar a potencia (MW), multiplicar por 6 (en realidad: dividir entre 1h/6pasos)
 
     # G_result = energía obtenida (MWh) del generador G (en este caso, energía solar). Para pasar a potencia (MW), multiplicar por 6 (en realidad: dividir entre 1h/6pasos)
     G_claves = ["x", "y", "z", "cA", "cF", "cV", "cTot", "name"]
@@ -224,23 +35,21 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     ]  # Supongo que es la energia obtenida del generador #Conversión a MW = MWh * 6pasos/1h
 
     # Vector de booleanos que indican si el Generador está produciendo (=True) en cada instante de tiempo
-    g_y = result_utils.calcular_coste(g_x, True)
+    g_y = result_utils.crear_lista_booleana_todos_valores_mayor_zero_true(g_x)
 
     # Vector de booleanos que indican si el Generador se arrancó (=True) en cada instante de tiempo
-    g_z = result_utils.calcular_coste(g_y, True, solo_primer_dato=True)
+    g_z = result_utils.crear_lista_booleana_primer_valor_mayor_zero_true(g_y)
 
     # Vector de Costes [EUR] de Arranque en cada instante de tiempo
-    cA = result_utils.calcular_coste(
-        g_x, datos_G.get("Ca", 0), solo_primer_dato=True, reemplazar=True
-    )
+    cA = result_utils.calcular_coste_arranque(g_x, datos_G.get("Ca", 0))
 
     # Vector de Costes [EUR] Fijos por estar en Producción en cada instante de tiempo
-    cF = result_utils.calcular_coste(
-        g_x, datos_G.get("Cf", 0) / 6, reemplazar=True
+    cF = result_utils.calcular_coste_fijo(
+        g_x, datos_G.get("Cf", 0) / 6
     )  # Conversión a EUR = EUR/h (cf) * 1h/6pasos
 
     # Vector de Costes [EUR] Variables en función de la producción en cada instante de tiempo
-    cV = result_utils.calcular_coste(
+    cV = result_utils.calcular_coste_variable(
         G_result, datos_G.get("Cv", 0)
     )  # Conversión a EUR =  EUR/MWh (cv) * MWh (G_result)
 
@@ -252,10 +61,13 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     G_valores = [g_x, g_y, g_z, cA, cF, cV, cTot, G_name]
     G = dict(zip(G_claves, G_valores))
 
-    ## C: Vector que contiene los resultados de cada Consumidor existente -> Si es consumidor consume H2????
+    return G
 
-    input_curves = vector_entrada[0]
-    precalentando = vector_entrada[1]
+
+def C_json(input_curves: dict, precalentando: dict, datos) -> dict:
+    datos_C = datos["C"][0]
+
+    ## C: Vector que contiene los resultados de cada Consumidor existente -> Si es consumidor consume H2????
 
     # Quitar energias de precalentamiento
     input_curves_sin_precalentamiento = result_utils.eliminar_energias_precalentamiento(
@@ -273,16 +85,17 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     ############ VECTORES AUXILIARES ################
     ### Expandir vectores de Potencia y Costes a 10 minutos (6 pasos de 10 minutos) ###
     vector_demanda = datos_C["Consumo"].get("Pot")  # MW/h
+    # vector_demanda= [0] + vector_demanda[:-1]
     vector_demanda_expandido_H = [x for elem in vector_demanda for x in [elem] * 6]
     vector_demanda_expandido = [x / 6 for x in vector_demanda_expandido_H]  # MW (kg)
 
     vector_Cc_d = datos_C["Costes"].get("Cc_d")  # EUR/MWh
-    vector_Cc_d_expandido = result_utils.expandir_vector(
+    vector_Cc_d_expandido = list_utils.expandir_vector(
         vector_Cc_d, 6
     )  # EUR/MW (EUR/Kg)
 
     vector_Cc_e = datos_C["Costes"].get("Cc_e")  # EUR/MWh
-    vector_Cc_e_expandido = result_utils.expandir_vector(
+    vector_Cc_e_expandido = list_utils.expandir_vector(
         vector_Cc_e, 6
     )  # EUR/MW (EUR/Kg)
 
@@ -296,39 +109,43 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     c_x = suma_links_h  # Kg
 
     # Vector de Potencia [MW] Recibida de menos (Déficit) respecto de la Solicitada en cada instante de tiempo
-    c_d = result_utils.calcular_desvios(
-        suma_links_h, vector_demanda_expandido_H, deficit=True
-    )  # Kg
+    c_d = result_utils.calcular_deficit(suma_links_h, vector_demanda_expandido_H)  # Kg
 
     # Vector de Potencia [MW] Recibida de más (Exceso) respecto de la Solicitada en cada instante de tiempo
-    c_e = result_utils.calcular_desvios(suma_links_h, vector_demanda_expandido_H)  # Kg
+    c_e = result_utils.calcular_exceso(suma_links_h, vector_demanda_expandido_H)  # Kg
 
     # Vector de booleanos que indican si el Consumidor está consumiendo (=True) en cada instante de tiempo
-    c_y = result_utils.calcular_coste(
-        suma_links_h, True
+    c_y = result_utils.crear_lista_booleana_todos_valores_mayor_zero_true(
+        suma_links_h
     )  ## Supongo que si producimos H2, se esta consumiendo.
 
     # Vector de Costes [EUR] generados por el Déficit de potencia suministrada respecto a solicitada en cada instante de tiempo
-    c_cD = result_utils.calcular_coste(c_d, vector_Cc_d_expandido)  # EUR
+    c_cD = result_utils.calcular_coste_variable(c_d, vector_Cc_d_expandido)  # EUR
 
     # Vector de Costes [EUR] generados por el Exceso de potencia suministrada respecto a solicitada en cada instante de tiempo
-    c_cE = result_utils.calcular_coste(c_e, vector_Cc_e_expandido)  # EUR
+    c_cE = result_utils.calcular_coste_variable(c_e, vector_Cc_e_expandido)  # EUR
 
     # Vector de Costes [EUR] Totales por desvíos en cada instante de tiempo
     c_cTot = [c_cd + c_ce for c_cd, c_ce in zip(c_cD, c_cE)]  # EUR
 
     # Energía Total [MWh] suministrada al Consumidor durante todos los instantes de tiempo
-    c_Ereal = numpy.sum(suma_links)  # Kg
+    c_Ereal = np.sum(suma_links)  # Kg
 
     # Ratio [-] entre la Energía Total suministrada / demandada (*100??)
-    c_REreal = c_Ereal / numpy.sum(vector_demanda_expandido)
+    c_REreal = c_Ereal / np.sum(vector_demanda_expandido)
 
     C_valores = [c_x, c_d, c_e, c_y, c_cD, c_cE, c_cTot, c_Ereal, c_REreal, name]
     C = dict(zip(C_claves, C_valores))
 
+    return C
+
+
+def A_json(A_result: list, Q_result: list, datos) -> dict:
+    datos_A = datos["A"][0]
+
     ### Vector que contiene los resultados de cada Almacenamiento existente
-    Q_result = vector_entrada[4]  # Q (MWh)
-    A_result = vector_entrada[5]  # A (MWh)
+    # Q (MWh)
+    # A (MWh)
 
     #### VECTORES AUXILIARES ####
     aQ = [
@@ -378,7 +195,7 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     yC = [x < 0 for x in A_result]
 
     # Vector de booleanos que indican si el Generador?? inició Carga (=True) en cada instante de tiempo
-    zC = result_utils.detectar_y_añadir_primer_true(
+    zC = list_utils.identificar_primer_true_de_cadenas_trues(
         yC
     )  # detecta cada vez empieza una carga, no solo la primera
 
@@ -386,38 +203,38 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     yD = [x > 0 for x in A_result]
 
     # Vector de booleanos que indican si el Generador??  inició Carga (=True) en cada instante de tiempo
-    zD = result_utils.detectar_y_añadir_primer_true(
+    zD = list_utils.identificar_primer_true_de_cadenas_trues(
         yD
     )  # detecta cada vez empieza una descarga, no solo la primera
 
     # Vector de Costes [EUR] por arrancar/iniciar Carga en cada instante de tiempo
-    cAC = result_utils.calcular_coste(zC, datos_A.get("CaC", 0), reemplazar=True)
+    cAC = result_utils.calcular_coste_fijo(zC, datos_A.get("CaC", 0))
 
     # Vector de Costes [EUR] Fijos por estar en Carga en cada instante de tiempo
-    cFC = result_utils.calcular_coste(
-        xC, datos_A.get("CfC", 0) / 6, reemplazar=True
+    cFC = result_utils.calcular_coste_fijo(
+        xC, datos_A.get("CfC", 0) / 6
     )  # Conversión a EUR = EUR/h (CfC) * 1h/6pasos
 
     # Vector de Costes [EUR] Variables en función de la potencia Cargada en cada instante de tiempo
-    cVC = result_utils.calcular_coste(
+    cVC = result_utils.calcular_coste_variable(
         xCh, datos_A.get("CvC", 0)
     )  # Conversión a EUR =  EUR/MWh (CvC) * MWh (xCh)
 
     # Vector de Costes [EUR] por arrancar/iniciar Descarga en cada instante de tiempo
-    cAD = result_utils.calcular_coste(zD, datos_A.get("CaD", 0), reemplazar=True)
+    cAD = result_utils.calcular_coste_fijo(zD, datos_A.get("CaD", 0))
 
     # Vector de Costes [EUR] Fijos por estar en Descarga en cada instante de tiempo
-    cFD = result_utils.calcular_coste(
-        xD, datos_A.get("CfD", 0) / 6, reemplazar=True
+    cFD = result_utils.calcular_coste_fijo(
+        xD, datos_A.get("CfD", 0) / 6
     )  # Conversión a EUR = EUR/h (CfC) * 1h/6pasos
 
     # Vector de Costes [EUR] Variables en función de la potencia Descarga en cada instante de tiempo
-    cVD = result_utils.calcular_coste(
+    cVD = result_utils.calcular_coste_variable(
         xDh, datos_A.get("CvD", 0)
     )  # Conversión a EUR =  EUR/MWh (CvC) * MWh (xDh)
 
     # Vector de Costes/valor [EUR] por mantener un determinado Nivel almacenado en cada instante de tiempo
-    cNm = result_utils.calcular_coste(
+    cNm = result_utils.calcular_coste_variable(
         aQ, datos_A.get("CaNm", 0)
     )  # not required #Conversión a EUR =  EUR/MW (CaNm) * MW (aQ)
 
@@ -460,13 +277,17 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     ]
     A = dict(zip(A_claves, A_valores))
 
-    ## R (MWh): Vector que contiene los resultados de cada conexión a Red existente
+    return A
 
-    R_result = vector_entrada[3]
+
+def R_json(R_result: list, datos) -> dict:
+    datos_R = datos["R"][0]
+
+    ## R (MWh): Vector que contiene los resultados de cada conexión a Red existente
 
     #### VECTORES AUXILIARES ####
     vector_potencia_comprometida = datos_R.get("Compromisos", {}).get(
-        "Pot", numpy.zeros(144).tolist()
+        "Pot", np.zeros(144).tolist()
     )  # MW
     vector_potencia_comprometida_exportacion = [
         x if x > 0 else 0 for x in vector_potencia_comprometida
@@ -476,16 +297,16 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     ]  # MW
 
     vector_Crd_E = datos_R["Costes"].get("CRd_E", 0)  # EUR/MWh
-    vector_Crd_E_expandido = result_utils.expandir_vector(vector_Crd_E, 6)  # EUR/MW
+    vector_Crd_E_expandido = list_utils.expandir_vector(vector_Crd_E, 6)  # EUR/MW
 
     vector_Ced_E = datos_R["Costes"].get("CRe_E", 0)  # EUR/MWh
-    vector_Ced_E_expandido = result_utils.expandir_vector(vector_Ced_E, 6)  # EUR/MW
+    vector_Ced_E_expandido = list_utils.expandir_vector(vector_Ced_E, 6)  # EUR/MW
 
     vector_Crd_I = datos_R["Costes"].get("CRd_I", 0)  # EUR/MWh
-    vector_Crd_I_expandido = result_utils.expandir_vector(vector_Crd_I, 6)  # EUR/MW
+    vector_Crd_I_expandido = list_utils.expandir_vector(vector_Crd_I, 6)  # EUR/MW
 
     vector_Ced_I = datos_R["Costes"].get("CRe_I", 0)  # EUR/MWh
-    vector_Ced_I_expandido = result_utils.expandir_vector(vector_Ced_I, 6)  # EUR/MW
+    vector_Ced_I_expandido = list_utils.expandir_vector(vector_Ced_I, 6)  # EUR/MW
 
     ######################
     R_claves = [
@@ -520,36 +341,36 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     xI = [x * 6 if x > 0 else 0 for x in R_result]  ## MW
 
     # Vector de Potencia [MW] Exportada de menos (Déficit) respecto de la Comprometida, en cada instante de tiempo
-    dE = result_utils.calcular_desvios(
-        xE, vector_potencia_comprometida_exportacion, deficit=True
+    dE = result_utils.calcular_deficit(
+        xE, vector_potencia_comprometida_exportacion
     )  # MW
 
     # Vector de Potencia [MW] Exportada de más (Exceso) respecto de la Comprometida, en cada instante de tiempo
-    eE = result_utils.calcular_desvios(
+    eE = result_utils.calcular_exceso(
         xE, vector_potencia_comprometida_exportacion
     )  # MW
 
     # Vector de Potencia [MW] Importada de menos (Déficit) respecto de la Comprometida, en cada instante de tiempo
-    dI = result_utils.calcular_desvios(
-        xI, vector_potencia_comprometida_importacion, deficit=True
+    dI = result_utils.calcular_deficit(
+        xI, vector_potencia_comprometida_importacion
     )  # MW
 
     # Vector de Potencia [MW] Importada de más (Exceso) respecto de la Comprometida, en cada instante de tiempo
-    eI = result_utils.calcular_desvios(
+    eI = result_utils.calcular_exceso(
         xI, vector_potencia_comprometida_importacion
     )  # MW
 
     # Vector de booleanos que indican si se está Exportando hacia la Red (=True) en cada instante de tiempo
-    yE = result_utils.calcular_coste(xE, True)
+    yE = result_utils.crear_lista_booleana_todos_valores_mayor_zero_true(xE)
 
     # Vector de booleanos que indican si se está Importando desde la Red (=True) en cada instante de tiempo
-    yI = result_utils.calcular_coste(xI, True)
+    yI = result_utils.crear_lista_booleana_todos_valores_mayor_zero_true(xI)
 
     ##Vector de Potencia [MW] Importación extra, por encima de la PmaxI/contratada, a la que se ha recurrido en cada instante de tiempo
-    xIextraAvail = result_utils.calcular_desvios(xI, datos_R.get("PmaxI", 0))  # MW
+    xIextraAvail = result_utils.calcular_exceso(xI, datos_R.get("PmaxI", 0))  # MW
 
     # Vector de Potencia [MW] Importación extra, por encima de la PmaxI/contratada, que se ha consumido en cada instante de tiempo
-    xIextraUsed = result_utils.calcular_desvios(
+    xIextraUsed = result_utils.calcular_exceso(
         xI, datos_R.get("PmaxI", 0)
     )  ## igual que el anterior??
 
@@ -560,19 +381,19 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     xBbajar = []
 
     # Vector de Costes [EUR] generados por el Déficit de potencia Exportada respecto de la comprometida, en cada instante de tiempo
-    cDE = result_utils.calcular_coste(dE, vector_Crd_E_expandido)  ##EUR
+    cDE = result_utils.calcular_coste_variable(dE, vector_Crd_E_expandido)  ##EUR
 
     # Vector de Costes [EUR] generados por el Exceso de potencia Exportada respecto de la comprometida, en cada instante de tiempo
-    cEE = result_utils.calcular_coste(eE, vector_Ced_E_expandido)  ##EUR
+    cEE = result_utils.calcular_coste_variable(eE, vector_Ced_E_expandido)  ##EUR
 
     # Vector de Costes [EUR] generados por el Déficit de potencia Importada respecto de la comprometida, en cada instante de tiempo
-    cDI = result_utils.calcular_coste(dI, vector_Crd_I_expandido)  ##EUR
+    cDI = result_utils.calcular_coste_variable(dI, vector_Crd_I_expandido)  ##EUR
 
     # Vector de Costes [EUR] generados por el Exceso de potencia Importada respecto de la comprometida, en cada instante de tiempo
-    cEI = result_utils.calcular_coste(eI, vector_Ced_I_expandido)  ##EUR
+    cEI = result_utils.calcular_coste_variable(eI, vector_Ced_I_expandido)  ##EUR
 
     # Vector de Costes [EUR] generados por importar una potencia mayor a la contratada (PmaxI), en cada instante de tiempo
-    cIextra = result_utils.calcular_coste(
+    cIextra = result_utils.calcular_coste_variable(
         xIextraAvail, vector_Ced_I_expandido
     )  ## not required  ##EUR ## mismo coste que el Exceso de potencia Importada??
 
@@ -605,6 +426,10 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     ]
     R = dict(zip(R_claves, R_valores))
 
+    return R
+
+
+def L_json(input_curves: dict, precalentando: dict, datos) -> list:
     ## L: Vector que contiene los resultados de cada Link existente
     # input_curves: Curvas de electricidad consumida por cada uno de los 3 links MW
 
@@ -655,7 +480,9 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
         )  # MW
 
         # Vector de booleanos que indican si el Link se arrancó (=True) en cada instante de tiempo
-        z = result_utils.detectar_y_añadir_primer_true(y)  # Despues de precalentar!!
+        z = list_utils.identificar_primer_true_de_cadenas_trues(
+            y
+        )  # Despues de precalentar!!
 
         # Vector de booleanos que indican si el Link está precalentando (=True) en cada instante de tiempo
         p = precalentando.get(i + 1, {})
@@ -671,28 +498,24 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
         )  # Kg(h2)
 
         # Vector de Costes [EUR] de Arranque en cada instante de tiempo
-        cA = result_utils.calcular_coste(
-            z, datos["L"][i].get("Ca", 0), reemplazar=True
-        )  # EUR
+        cA = result_utils.calcular_coste_arranque(z, datos["L"][i].get("Ca", 0))  # EUR
 
         # Vector de Costes [EUR] Fijos por estar en Operación en cada instante de tiempo
-        cF = result_utils.calcular_coste(
-            y, datos["L"][i].get("Cf", 0) / 6, reemplazar=True
-        )  # EUR
+        cF = result_utils.calcular_coste_fijo(y, datos["L"][i].get("Cf", 0) / 6)  # EUR
 
         # Vector de Costes [EUR] Variables en función de la potencia Input en cada instante de tiempo
-        cVI = result_utils.calcular_coste(
+        cVI = result_utils.calcular_coste_variable(
             xIh, datos["L"][i].get("CvI", 0)
         )  # Conversión a EUR =  EUR/MWh (CvI) * MWh (xIh)
 
         # Vector de Costes [EUR] Variables en función de la potencia Output en cada instante de tiempo
-        cVO = result_utils.calcular_coste(
+        cVO = result_utils.calcular_coste_variable(
             xOh, datos["L"][i].get("CvO", 0)
         )  # Conversión a EUR =  EUR/MWh (CvO) * MWh (xOh)
 
         # Vector de Costes [EUR] Fijos por estar en Precalentamiento en cada instante de tiempo
-        cFp = result_utils.calcular_coste(
-            xPI, datos["L"][i].get("CFp", 0) / 6, reemplazar=True
+        cFp = result_utils.calcular_coste_fijo(
+            xPI, datos["L"][i].get("CFp", 0) / 6
         )  # EUR
 
         # Vector de Costes [EUR] Totales en cada instante de tiempo
@@ -712,6 +535,10 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
 
         L[i].update(dict(zip(L_claves, L_valores)))
 
+    return L
+
+
+def Time_json() -> dict:
     Time_claves = ["N", "dtIni", "IncrT"]
 
     N = 144  # Número de Instantes de Tiempo Simulados
@@ -721,8 +548,11 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     Time_valores = [N, dtIni, IncrT]
     T = dict(zip(Time_claves, Time_valores))
 
+    return T
+
+
+def Costs_json(resultados: list) -> dict:
     Costs_claves = ["Total"]
-    resultados = [G, C, A, R, L]
 
     Total = 0.0
     costes_por_resultado = {}  # Para guardar los costes individuales por entrada
@@ -737,109 +567,6 @@ def vector_entrada_to_Json(vector_entrada, data, nombre_archivo="resultados_Q.js
     Costs_valores = [Total]
     Costs = dict(zip(Costs_claves, Costs_valores))
 
-    print("Coste total:", Total)
-    df_costes = pd.DataFrame(costes_por_resultado)
-    print(df_costes)
+    visualizar.visualizar_costes(Total, costes_por_resultado)
 
-    # Ruta de la carpeta de salida
-    output_dir = "./outputs"
-    # Nombre del archivo
-    output_file = nombre_archivo
-    # Ruta completa del archivo
-    output_path = os.path.join(output_dir, output_file)
-
-    # Crear la carpeta si no existe
-    os.makedirs(output_dir, exist_ok=True)
-
-    data = {}
-    data["G"] = [G]
-    data["C"] = [C]
-    data["A"] = [A]
-    data["R"] = [R]
-    data["L"] = L
-    data["D"] = []
-    data["Time"] = T
-    data["Costs"] = Costs
-
-    # Convert the Python dictionary to a JSON string with indentation
-    # json_data = json.dumps(data, indent=4) # This is not needed for this approach
-
-    # Write the Python dictionary 'data' to resultados_Q.json
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(
-            data, f, indent=4, ensure_ascii=False
-        )  # Writing dictionary to JSON file
-
-    return
-
-
-# Ejemplo de uso
-vector_entrada_to_Json(
-    vector_resultados_Q,
-    "./Inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/datos.json",
-    nombre_archivo="resultados_Q2.json",
-)
-
-# Leer el archivo JSON
-with open(
-    "inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/datos.json", "r"
-) as archivo:
-    datos = json.load(archivo)
-C_Demanda = datos["C"][0]["Consumo"].get("Pot")  # MW/h
-vector_demanda_expandido_H = [x for elem in C_Demanda for x in [elem] * 6]
-# Crear el gráfico
-plt.plot(
-    vector_demanda_expandido_H, label="Demanda", marker="_", markeredgewidth=6
-)  # Opcional: marker='o' para poner puntitos
-
-with open(
-    "./outputs/resultados_Q2.json",
-    "r",
-) as archivo:
-    R_GQ = json.load(archivo)
-
-C_x_GQ = R_GQ["C"][0]["x"]
-# C_x_GQ = calcular_H2(input_curves_GQ, Precalentado_GQ, datos)
-
-with open(
-    "./Inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/resultados.json",
-    "r",
-) as archivo:
-    susResultados = json.load(archivo)
-
-C_x_LC = susResultados["C"][0]["x"]
-plt.plot(
-    C_x_GQ, label="GeneradoQ", marker="_"
-)  # Opcional: marker='o' para poner puntitos
-
-with open(
-    "./Inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/resultados.json",
-    "r",
-) as archivo:
-    susResultados = json.load(archivo)
-
-C_x_LC = susResultados["C"][0]["x"]
-plt.plot(C_x_LC, label="LeidoC", marker="o")  # Opcional: marker='o' para poner puntitos
-
-with open(
-    "./outputs/resultados_C.json",
-    "r",
-) as archivo:
-    R_GC = json.load(archivo)
-
-C_x_GC = R_GC["C"][0]["x"]
-plt.plot(
-    C_x_GC, label="GeneradoC", marker="_"
-)  # Opcional: marker='o' para poner puntitos
-
-
-plt.title("Comparación de Demanda y Generación")
-plt.legend()
-plt.xlabel("t")
-plt.ylabel("H2/kg")
-plt.grid(True)
-plt.show()
-
-
-# Uso de la función
+    return Costs
