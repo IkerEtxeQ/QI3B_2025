@@ -1,96 +1,20 @@
 import utils.io as io
 import numpy as numpy
+import utils.vector_entrada as vector_entrada
 
 
-def json_to_vector_entrada_resultados(json_data):
-    """
-    Convierte un diccionario JSON, generado por el script original,
-    de vuelta a la lista 'vector_entrada_resultados'.
+def modificar_listas(obj):
+    if isinstance(obj, list):
+        # Si es lista de valores simples, modificarla
+        if all(not isinstance(x, (list, dict)) for x in obj):
+            return [0] * 6 + obj[:-6] if len(obj) >= 6 else [0] * 6
+        # Si hay estructuras dentro, recorrerlas recursivamente
+        return [modificar_listas(item) for item in obj]
 
-    Args:
-        json_data (dict): El diccionario JSON cargado desde el archivo.
+    elif isinstance(obj, dict):
+        return {k: modificar_listas(v) for k, v in obj.items()}
 
-    Returns:
-        list: Una lista conteniendo los datos extraídos del JSON en el
-              mismo formato que 'vector_entrada_resultados'.  Retorna None si
-              la estructura del json_data no es la esperada.
-    """
-
-    try:
-        # Extraer datos del JSON
-        G = json_data.get(
-            "G", [{}]
-        )[
-            0
-        ]  # Accede al primer elemento de la lista o usa un diccionario vacío por defecto
-        A = json_data.get("A", [{}])[0]
-        R = json_data.get("R", [{}])[0]
-        L = json_data.get("L", [])  # L puede ser una lista de diccionarios
-        # Time = json_data.get("Time", {})  # time no lo uso
-
-        # Extraer input_curves de L
-        input_curves = {}
-        precalentando = {}
-        E_prec = 0.30281338645129247  # Escalar a añadir
-
-        for i, link_data in enumerate(L):
-            link_number = i + 1  # Asumiendo que los links se numeran desde 1
-
-            # Divide la potencia de entrada (xI) entre 6 para volver a MWh
-            xI = [
-                x if isinstance(x, (int, float)) else 0 for x in link_data.get("xI", [])
-            ]
-
-            # Añadir escalar a los 7 elementos anteriores al primer valor positivo
-            try:
-                first_pos_index = next(j for j, val in enumerate(xI) if val > 0)
-                for j in range(max(0, first_pos_index - 7), first_pos_index):
-                    xI[j] = E_prec
-            except StopIteration:
-                pass  # No hay valores positivos, no hacer nada
-
-            input_curves[link_number] = xI
-            precalentando[link_number] = link_data.get("p", [])
-
-        # Extraer G_result del campo "x" de G y dividir cada elemento por 6
-        G_result = [x / 6 for x in G.get("x", [])]  # bien
-
-        # Extraer R_result del campo "xI" de R y dividir cada elemento por 6
-        RI = [x / 6 if isinstance(x, (int, float)) else 0 for x in R.get("xI", [])]
-        RE = [x / 6 if isinstance(x, (int, float)) else 0 for x in R.get("xE", [])]
-
-        RI_array = numpy.array(RI)
-        RE_array = numpy.array(RE)
-
-        R_result = (RI_array + RE_array).tolist()  # bien
-
-        # Extraer Q_result del campo "C" de A
-        Q_result = A.get("C", [])  # bien
-
-        # Extraer A_result (calcular a partir de C del almacenamiento)
-        # La lógica original parece calcularlo como la diferencia entre Q[t+1] y Q[t]
-        Q_result_np = numpy.array(Q_result)
-        A_result = numpy.diff(Q_result_np).tolist()
-        A_result = [-x for x in A_result]  # Invertir el signo de A_result
-        A_result = [
-            0.0
-        ] + A_result  # Agregar un 0 al inicio para mantener la longitud #bien
-
-        # Reordenar los datos en la estructura vector_entrada_resultados
-        vector_entrada_resultados = [
-            input_curves,
-            precalentando,
-            G_result,
-            Q_result,
-            A_result,
-            R_result,
-        ]
-
-        return vector_entrada_resultados
-    except (KeyError, TypeError, IndexError) as e:
-        print(f"Error al procesar el JSON: {e}")
-        print(e)
-        return None
+    return obj  # Otros tipos se devuelven tal cual
 
 
 datos = io.leer_archivo_json(
@@ -1573,21 +1497,9 @@ resultados_Sener_json = io.leer_archivo_json(
     "./Inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/resultados.json"
 )
 
-resultados_Sener = json_to_vector_entrada_resultados(resultados_Sener_json)
+resultados_Sener = vector_entrada.json_to_vector_entrada_resultados(
+    resultados_Sener_json
+)
 
-
-def modificar_listas(obj):
-    if isinstance(obj, list):
-        # Si es lista de valores simples, modificarla
-        if all(not isinstance(x, (list, dict)) for x in obj):
-            return [0] * 6 + obj[:-6] if len(obj) >= 6 else [0] * 6
-        # Si hay estructuras dentro, recorrerlas recursivamente
-        return [modificar_listas(item) for item in obj]
-
-    elif isinstance(obj, dict):
-        return {k: modificar_listas(v) for k, v in obj.items()}
-
-    return obj  # Otros tipos se devuelven tal cual
-
-
+resultados_Sener_originales_desplazados = modificar_listas(resultados_Sener_json)
 resultados_Sener_desplazados = modificar_listas(resultados_Sener)

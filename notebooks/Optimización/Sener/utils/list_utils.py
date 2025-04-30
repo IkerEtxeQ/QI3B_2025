@@ -3,8 +3,7 @@ import numpy as np
 
 def crear_nvector_like(vector_entrada: list) -> np.ndarray:
     """
-    Convierte el vector de entrada a numpy y crea un vector de resultados (lleno de 0s) numpy de igual tamaño.
-    tipo de dato por defecto float.
+    Convierte el vector de entrada a numpy
     """
     vector_nentrada = np.asarray(vector_entrada)
 
@@ -29,7 +28,7 @@ def identificar_posiciones_nozero(vector_entrada_np: np.ndarray) -> np.ndarray:
     if indices_no_zero.size > 0:
         return indices_no_zero
     else:
-        return np.array([])  # Si no hay elementos no cero, devolver -1
+        return np.array([])
 
 
 def identificar_primera_posicion_no_zero(vector_entrada_np: np.ndarray) -> int:
