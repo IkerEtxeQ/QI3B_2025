@@ -3,16 +3,16 @@ import numpy as numpy
 import utils.vector_entrada as vector_entrada
 
 
-def modificar_listas(obj):
+def desplazar_seis_unidades_tiempo(obj):
     if isinstance(obj, list):
         # Si es lista de valores simples, modificarla
         if all(not isinstance(x, (list, dict)) for x in obj):
             return [0] * 6 + obj[:-6] if len(obj) >= 6 else [0] * 6
         # Si hay estructuras dentro, recorrerlas recursivamente
-        return [modificar_listas(item) for item in obj]
+        return [desplazar_seis_unidades_tiempo(item) for item in obj]
 
     elif isinstance(obj, dict):
-        return {k: modificar_listas(v) for k, v in obj.items()}
+        return {k: desplazar_seis_unidades_tiempo(v) for k, v in obj.items()}
 
     return obj  # Otros tipos se devuelven tal cual
 
@@ -1497,9 +1497,14 @@ resultados_Sener_json = io.leer_archivo_json(
     "./Inputs/IPCEI-Cuantica_kickoff_datosSENER_250228/ejemplo_sener/resultados.json"
 )
 
-resultados_Sener = vector_entrada.json_to_vector_entrada_resultados(
+resultados_Sener_originales_desplazados = desplazar_seis_unidades_tiempo(
     resultados_Sener_json
 )
 
-resultados_Sener_originales_desplazados = modificar_listas(resultados_Sener_json)
-resultados_Sener_desplazados = modificar_listas(resultados_Sener)
+resultados_Sener_vector_entrada = vector_entrada.json_to_vector_entrada_resultados(
+    resultados_Sener_json
+)
+
+resultados_Sener_generados_desplazados = desplazar_seis_unidades_tiempo(
+    resultados_Sener_vector_entrada
+)

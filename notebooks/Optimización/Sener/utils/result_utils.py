@@ -1,8 +1,5 @@
 import numpy as np
 import utils.list_utils as list_utils
-import importlib
-
-importlib.reload(list_utils)
 
 
 def transference_function(energy_input, data, link=0, verbose=False):
@@ -41,7 +38,7 @@ def crear_lista_booleana_primer_valor_mayor_zero_true(vector: list) -> list:
 
     primer_indice_no_zero = list_utils.identificar_primera_posicion_no_zero(nvector)
 
-    if primer_indice_no_zero.size > 0:
+    if primer_indice_no_zero != -1:
         resultado[primer_indice_no_zero] = True
 
     return resultado.tolist()
@@ -65,7 +62,7 @@ def calcular_coste_arranque(vector: list, coste: float) -> list:
 
     primer_indice_no_zero = list_utils.identificar_primera_posicion_no_zero(nvector)
 
-    if primer_indice_no_zero.size > 0:
+    if primer_indice_no_zero != -1:
         resultado[primer_indice_no_zero] = coste
 
     return resultado.tolist()
